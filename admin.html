@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Follow Stocks</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #07070e;
+      --card:    #0c0c18;
+      --card2:   #101020;
+      --border:  rgba(255,255,255,0.07);
+      --border-h:rgba(255,255,255,0.13);
+      --text:    #e4e4f0;
+      --dim:     #8888a0;
+      --muted:   #44445a;
+      --green:   #0fe07a;
+      --red:     #ff3d58;
+      --amber:   #f5b731;
+      --accent:  #6153f5;
+    }
+    body { background:var(--bg); color:var(--text); font-family:'Outfit',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+    /* LOGIN */
+    #login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at 50% 0%,rgba(97,83,245,.12) 0%,transparent 60%); }
+    .login-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:40px 36px; width:360px; text-align:center; }
+    .login-mark { width:44px; height:44px; background:var(--accent); border-radius:12px; display:inline-flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; color:#fff; margin-bottom:18px; }
+    .login-card h1 { font-size:20px; font-weight:600; letter-spacing:-.01em; margin-bottom:4px; }
+    .login-card p  { font-size:13px; color:var(--dim); margin-bottom:28px; }
+    .pwd-wrap { position:relative; margin-bottom:12px; }
+    .pwd-wrap input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 40px 12px 14px; color:var(--text); font-family:'Outfit',sans-serif; font-size:14px; outline:none; transition:border-color .15s; }
+    .pwd-wrap input:focus { border-color:var(--accent); }
+    .pwd-toggle { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--muted); display:flex; align-items:center; }
+    .login-btn { width:100%; padding:12px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-family:'Outfit',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:opacity .15s; }
+    .login-btn:hover { opacity:.9; }
+    .login-error { font-size:12px; color:var(--red); margin-top:10px; min-height:18px; }
+
+    /* HEADER */
+    #dashboard { display:none; min-height:100vh; }
+    .admin-header { height:52px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:rgba(7,7,14,.95); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; backdrop-filter:blur(20px); }
+    .admin-brand { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; }
+    .admin-mark { width:26px; height:26px; background:var(--accent); border-radius:7px; display:grid; place-items:center; font-size:12px; font-weight:700; color:#fff; }
+    .admin-badge { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.09em; color:var(--dim); background:rgba(255,255,255,.05); border:1px solid var(--border); padding:2px 8px; border-radius:99px; }
+    .header-right { display:flex; align-items:center; gap:10px; }
+    .logout-btn { font-size:12px; color:var(--dim); background:none; border:1px solid var(--border); border-radius:7px; padding:5px 12px; cursor:pointer; font-family:'Outfit',sans-serif; transition:all .15s; }
+    .logout-btn:hover { color:var(--text); }
+    a.back-link { font-size:12px; color:var(--dim); text-decoration:none; display:flex; align-items:center; gap:5px; transition:color .15s; }
+    a.back-link:hover { color:var(--text); }
+
+    /* LAYOUT */
+    .admin-layout { display:flex; min-height:calc(100vh - 52px); }
+    .sidebar { width:220px; flex-shrink:0; padding:20px 12px; border-right:1px solid var(--border); display:flex; flex-direction:column; gap:2px; }
+    .sidebar-section { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); padding:0 8px; margin:12px 0 6px; }
+    .sidebar-section:first-child { margin-top:0; }
+    .nav-item { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:8px; border:none; background:transparent; color:var(--dim); font-family:'Outfit',sans-serif; font-size:13px; font-weight:500; cursor:pointer; width:100%; text-align:left; transition:all .15s; }
+    .nav-item:hover { color:var(--text); background:rgba(255,255,255,.04); }
+    .nav-item.active { color:var(--text); background:rgba(97,83,245,.15); }
+    .content { flex:1; padding:28px; overflow-y:auto; }
+
+    /* PAGE HEADER */
+    .page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+    .page-title { font-size:18px; font-weight:600; letter-spacing:-.01em; }
+    .page-sub { font-size:13px; color:var(--muted); margin-top:2px; }
+
+    /* BUTTONS */
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:9px; font-family:'Outfit',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; transition:all .15s; }
+    .btn-primary   { background:var(--accent); color:#fff; }
+    .btn-primary:hover { opacity:.9; }
+    .btn-secondary { background:var(--card2); border:1px solid var(--border); color:var(--dim); }
+    .btn-secondary:hover { color:var(--text); border-color:var(--border-h); }
+    .btn-danger    { background:rgba(255,61,88,.12); border:1px solid rgba(255,61,88,.25); color:var(--red); }
+    .btn-danger:hover { background:rgba(255,61,88,.2); }
+    .btn-sm   { padding:5px 11px; font-size:12px; border-radius:7px; }
+
+    /* STATS */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+    .stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
+    .stat-lbl { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); margin-bottom:10px; }
+    .stat-val { font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:500; letter-spacing:-.02em; }
+    .stat-sub { font-size:12px; color:var(--muted); margin-top:4px; }
+
+    /* TABLE */
+    .table-wrap { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    thead tr { border-bottom:1px solid var(--border); }
+    th { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); padding:12px 16px; text-align:left; white-space:nowrap; }
+    tbody tr { border-bottom:1px solid rgba(255,255,255,.035); transition:background .12s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:rgba(255,255,255,.02); }
+    td { padding:13px 16px; font-size:13px; vertical-align:middle; }
+    .td-mono { font-family:'JetBrains Mono',monospace; font-size:12.5px; }
+    .td-dim  { color:var(--dim); }
+    .td-actions { display:flex; gap:6px; justify-content:flex-end; }
+
+    /* TAGS */
+    .tag { display:inline-flex; align-items:center; padding:2px 8px; border-radius:5px; font-size:11px; font-weight:500; border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--dim); }
+    .tag.green { background:rgba(15,224,122,.1); border-color:rgba(15,224,122,.25); color:var(--green); }
+    .tag.amber { background:rgba(245,183,49,.1);  border-color:rgba(245,183,49,.25);  color:var(--amber); }
+
+    /* MODAL */
+    .modal-overlay { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+    .modal-overlay.open { display:flex; }
+    .modal { background:var(--card); border:1px solid var(--border-h); border-radius:16px; padding:28px; width:500px; max-height:90vh; overflow-y:auto; }
+    .modal-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
+    .modal-title { font-size:16px; font-weight:600; }
+    .modal-close { width:28px; height:28px; border-radius:7px; border:1px solid var(--border); background:transparent; color:var(--dim); cursor:pointer; display:grid; place-items:center; font-size:16px; transition:all .15s; }
+    .modal-close:hover { color:var(--text); }
+
+    /* FORM */
+    .form-group { margin-bottom:16px; }
+    .form-row   { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    label { display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px; }
+    input[type="text"], input[type="number"], input[type="date"], select {
+      width:100%; background:var(--bg); border:1px solid var(--border); border-radius:9px;
+      padding:10px 12px; color:var(--text); font-family:'Outfit',sans-serif; font-size:13.5px; outline:none; transition:border-color .15s; appearance:none;
+    }
+    input:focus, select:focus { border-color:var(--accent); }
+    input::placeholder { color:var(--muted); }
+    input:disabled { opacity:.5; }
+    .input-with-btn { display:flex; gap:8px; }
+    .input-with-btn input { flex:1; }
+    .form-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:22px; padding-top:18px; border-top:1px solid var(--border); }
+
+    .fetch-result { background:rgba(15,224,122,.07); border:1px solid rgba(15,224,122,.2); border-radius:8px; padding:10px 12px; margin-top:8px; font-size:12.5px; display:none; }
+    .fetch-error  { background:rgba(255,61,88,.07);  border:1px solid rgba(255,61,88,.2);  border-radius:8px; padding:10px 12px; margin-top:8px; font-size:12.5px; color:var(--red); display:none; }
+
+    /* TOAST */
+    #toast { position:fixed; bottom:24px; right:24px; background:var(--card); border:1px solid var(--border-h); border-radius:10px; padding:12px 18px; font-size:13px; box-shadow:0 8px 32px rgba(0,0,0,.5); transform:translateY(80px); opacity:0; transition:all .3s; z-index:2000; display:flex; align-items:center; gap:8px; }
+    #toast.show { transform:translateY(0); opacity:1; }
+    #toast.success { border-color:rgba(15,224,122,.35); color:var(--green); }
+    #toast.error   { border-color:rgba(255,61,88,.35);  color:var(--red); }
+
+    .empty { text-align:center; padding:48px 20px; color:var(--muted); font-size:13px; }
+    .empty p:first-child { font-size:15px; margin-bottom:6px; color:var(--dim); }
+    .pos { color:var(--green); }
+    .neg { color:var(--red); }
+    select option { background:#0c0c18; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-mark">F</div>
+    <h1>Follow Stocks</h1>
+    <p>Área de administração · acesso restrito</p>
+    <div class="pwd-wrap">
+      <input type="password" id="pwd-input" placeholder="Password de acesso" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="pwd-toggle" onclick="togglePwd()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <p class="login-error" id="login-error"></p>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="admin-header">
+    <div class="admin-brand">
+      <div class="admin-mark">F</div>
+      Follow Stocks
+      <span class="admin-badge">Admin</span>
+    </div>
+    <div class="header-right">
+      <a href="index.html" class="back-link">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        Ver site
+      </a>
+      <button class="logout-btn" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="admin-layout">
+    <nav class="sidebar">
+      <div class="sidebar-section">Principal</div>
+      <button class="nav-item active" onclick="showTab('overview',this)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="7" height="9" rx="1"/><rect x="15" y="12" width="7" height="9" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/></svg>
+        Visão Geral
+      </button>
+      <div class="sidebar-section">Gestão</div>
+      <button class="nav-item" onclick="showTab('assets',this)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+        Ativos
+      </button>
+      <button class="nav-item" onclick="showTab('holdings',this)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        Carteira
+      </button>
+    </nav>
+
+    <div class="content" id="tab-content">
+      <div style="color:var(--muted);font-size:13px">A carregar...</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ASSET -->
+<div class="modal-overlay" id="asset-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="asset-modal-title">Adicionar Ativo</div>
+      <button class="modal-close" onclick="closeAssetModal()">&#xD7;</button>
+    </div>
+    <input type="hidden" id="asset-id">
+    <div class="form-group">
+      <label>Ticker Yahoo Finance *</label>
+      <div class="input-with-btn">
+        <input type="text" id="f-ticker" placeholder="ex: AAPL, VWCE.DE, BTC-USD" style="text-transform:uppercase">
+        <button class="btn btn-secondary" onclick="verifyTicker()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Verificar
+        </button>
+      </div>
+      <div class="fetch-result" id="fetch-result"></div>
+      <div class="fetch-error"  id="fetch-error"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nome *</label>
+        <input type="text" id="f-name" placeholder="Apple Inc.">
+      </div>
+      <div class="form-group">
+        <label>ISIN</label>
+        <input type="text" id="f-isin" placeholder="US0378331005">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Setor</label>
+        <select id="f-sector">
+          <option value="">&#x2014; Selecionar &#x2014;</option>
+          <option>Technology</option><option>Healthcare</option><option>Financials</option>
+          <option>Consumer Discretionary</option><option>Consumer Staples</option>
+          <option>Communication Services</option><option>Industrials</option>
+          <option>Energy</option><option>Materials</option><option>Real Estate</option>
+          <option>Utilities</option><option>Crypto</option><option>ETF</option><option>Outros</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipo</label>
+        <select id="f-type">
+          <option value="Stock">Stock</option><option value="ETF">ETF</option>
+          <option value="Crypto">Crypto</option><option value="Bond">Bond</option><option value="Outro">Outro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeAssetModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveAsset()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: HOLDING -->
+<div class="modal-overlay" id="holding-modal">
+  <div class="modal" style="width:420px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="holding-modal-title">Editar Posição</div>
+      <button class="modal-close" onclick="closeHoldingModal()">&#xD7;</button>
+    </div>
+    <input type="hidden" id="h-asset-id">
+    <input type="hidden" id="h-holding-id">
+    <div class="form-group">
+      <label>Ativo</label>
+      <input type="text" id="h-asset-name" disabled>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>N&#xBA; de A&#xe7;&#xf5;es *</label>
+        <input type="number" id="h-shares" placeholder="0" min="0" step="0.0001">
+      </div>
+      <div class="form-group">
+        <label>Pre&#xe7;o M&#xe9;dio de Compra (&#x20ac;) *</label>
+        <input type="number" id="h-avg-price" placeholder="0.00" min="0" step="0.01">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Data da &#xda;ltima Compra</label>
+      <input type="date" id="h-date">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-danger btn-sm" id="h-delete-btn" onclick="deleteHolding()" style="display:none;margin-right:auto">Remover posi&#xe7;&#xe3;o</button>
+      <button class="btn btn-secondary" onclick="closeHoldingModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveHolding()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL      = 'https://xzxnjifpgvshzlsxhags.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eG5qaWZwZ3ZzaHpsc3hoYWdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MDYzMjQsImV4cCI6MjA5MjQ4MjMyNH0.HlfyTZxvcPcPTR0yWCBUVU8vKm9ncaPVSqBW9LhJvE4';
+const PWD_HASH = '16dc6e887e4cf958c9a93a4bda5edabf822dd0737d516f23be2256f7f48fa76e';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let allAssets = [], allHoldings = [], currentTab = 'overview';
+
+/* AUTH */
+async function doLogin() {
+  const pwd = document.getElementById('pwd-input').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!pwd) { errEl.textContent = 'Introduz a password.'; return; }
+  const hash = await sha256(pwd);
+  if (hash !== PWD_HASH) { errEl.textContent = 'Password incorreta.'; document.getElementById('pwd-input').value = ''; return; }
+  sessionStorage.setItem('fs-admin','1');
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  loadData();
+}
+function doLogout() {
+  sessionStorage.removeItem('fs-admin');
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pwd-input').value = '';
+}
+function togglePwd() { const i=document.getElementById('pwd-input'); i.type=i.type==='password'?'text':'password'; }
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+if (sessionStorage.getItem('fs-admin')==='1') {
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  loadData();
+}
+
+/* DATA */
+async function loadData() {
+  const [aRes,hRes] = await Promise.all([
+    sb.from('assets').select('*').order('name'),
+    sb.from('holdings').select('*'),
+  ]);
+  allAssets=aRes.data||[]; allHoldings=hRes.data||[];
+  renderCurrentTab();
+}
+function renderCurrentTab() {
+  if (currentTab==='overview') renderOverview();
+  else if (currentTab==='assets') renderAssets();
+  else if (currentTab==='holdings') renderHoldings();
+}
+function showTab(tab, btn) {
+  currentTab=tab;
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderCurrentTab();
+}
+
+/* OVERVIEW */
+async function renderOverview() {
+  const holdings = allHoldings.filter(h=>+h.num_shares>0);
+  const invested = holdings.reduce((s,h)=>s+(+h.avg_price*+h.num_shares),0);
+  const wRes = await sb.from('watchlist').select('asset_id');
+  const watchedN = wRes.data?.length||0;
+  document.getElementById('tab-content').innerHTML = `
+    <div class="page-hdr">
+      <div><div class="page-title">Vis&#xe3;o Geral</div><div class="page-sub">Resumo da tua carteira</div></div>
+      <button class="btn btn-primary" onclick="showTab('assets',document.querySelectorAll('.nav-item')[1])">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Adicionar Ativo
+      </button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-lbl">Total de Ativos</div><div class="stat-val">${allAssets.length}</div><div class="stat-sub">ativos registados</div></div>
+      <div class="stat-card"><div class="stat-lbl">Em Carteira</div><div class="stat-val pos">${holdings.length}</div><div class="stat-sub">com posi&#xe7;&#xe3;o aberta</div></div>
+      <div class="stat-card"><div class="stat-lbl">Seguidos</div><div class="stat-val" style="color:var(--amber)">${watchedN}</div><div class="stat-sub">na watchlist</div></div>
+      <div class="stat-card"><div class="stat-lbl">Total Investido</div><div class="stat-val">${fmtBig(invested)} &#x20ac;</div><div class="stat-sub">ao pre&#xe7;o m&#xe9;dio de compra</div></div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px">Como usar o Admin</div>
+      <div style="font-size:13px;color:var(--dim);line-height:1.8">
+        <b style="color:var(--text)">1. Ativos</b> &mdash; Adiciona os ativos que queres acompanhar. O bot&#xe3;o <b>Verificar</b> preenche o nome automaticamente via Yahoo Finance.<br>
+        <b style="color:var(--text)">2. Carteira</b> &mdash; Define o n&#xba; de a&#xe7;&#xf5;es e pre&#xe7;o m&#xe9;dio para cada posi&#xe7;&#xe3;o. Tudo o resto (pre&#xe7;o atual, varia&#xe7;&#xe3;o, retorno, P/E) &#xe9; autom&#xe1;tico.<br>
+        <b style="color:var(--text)">3. Site</b> &mdash; Os dados s&#xe3;o atualizados automaticamente a cada entrada no site e a cada 30 segundos.
+      </div>
+    </div>
+    <div style="background:rgba(97,83,245,.08);border:1px solid rgba(97,83,245,.25);border-radius:12px;padding:16px 20px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:6px">Necess&#xe1;rio uma vez</div>
+      <div style="font-size:12px;color:var(--dim);line-height:1.6">
+        Corre o ficheiro <b style="color:var(--text)">supabase-admin-policies.sql</b> no SQL Editor do Supabase para ativar permiss&#xf5;es de escrita nesta p&#xe1;gina.
+      </div>
+    </div>`;
+}
+
+/* ASSETS */
+function renderAssets() {
+  const holdingIds = new Set(allHoldings.filter(h=>+h.num_shares>0).map(h=>h.asset_id));
+  document.getElementById('tab-content').innerHTML = `
+    <div class="page-hdr">
+      <div><div class="page-title">Ativos</div><div class="page-sub">${allAssets.length} ativos registados</div></div>
+      <button class="btn btn-primary" onclick="openAddAsset()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Adicionar Ativo
+      </button>
+    </div>
+    <div class="table-wrap">
+    ${allAssets.length===0 ? `<div class="empty"><p>Nenhum ativo registado</p><p>Clica em "Adicionar Ativo" para come&#xe7;ar</p></div>` : `
+      <table>
+        <thead><tr><th>Ticker</th><th>Nome</th><th>ISIN</th><th>Setor</th><th>Tipo</th><th>Estado</th><th style="text-align:right">A&#xe7;&#xf5;es</th></tr></thead>
+        <tbody>
+        ${allAssets.map(a=>`
+          <tr>
+            <td><span class="td-mono" style="font-weight:600">${a.ticker}</span></td>
+            <td>${a.name}</td>
+            <td class="td-mono td-dim" style="font-size:11px">${a.isin||'&#x2014;'}</td>
+            <td class="td-dim">${a.sector||'&#x2014;'}</td>
+            <td><span class="tag">${a.asset_type||'Stock'}</span></td>
+            <td>${holdingIds.has(a.id)?'<span class="tag green">Em carteira</span>':'<span class="tag">Watchlist</span>'}</td>
+            <td><div class="td-actions">
+              <button class="btn btn-secondary btn-sm" onclick="openEditAsset('${a.id}')">Editar</button>
+              <button class="btn btn-danger btn-sm" onclick="confirmDeleteAsset('${a.id}','${a.ticker}')">Eliminar</button>
+            </div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+
+/* HOLDINGS */
+function renderHoldings() {
+  const hMap = {};
+  allHoldings.forEach(h=>{ hMap[h.asset_id]=h; });
+  const sorted = [...allAssets].sort((a,b)=>{
+    const ha=hMap[a.id], hb=hMap[b.id];
+    if(ha&&!hb) return -1; if(!ha&&hb) return 1;
+    return a.name.localeCompare(b.name);
+  });
+  document.getElementById('tab-content').innerHTML = `
+    <div class="page-hdr">
+      <div><div class="page-title">Carteira</div><div class="page-sub">Define o n&#xba; de a&#xe7;&#xf5;es e pre&#xe7;o m&#xe9;dio para cada posi&#xe7;&#xe3;o</div></div>
+    </div>
+    <div class="table-wrap">
+    ${sorted.length===0 ? `<div class="empty"><p>Nenhum ativo ainda</p><p>Adiciona ativos no separador "Ativos" primeiro</p></div>` : `
+      <table>
+        <thead><tr><th>Ticker</th><th>Nome</th><th>N&#xba; A&#xe7;&#xf5;es</th><th>Pre&#xe7;o M&#xe9;dio</th><th>&#xda;lt. Compra</th><th>Investido</th><th style="text-align:right">A&#xe7;&#xf5;es</th></tr></thead>
+        <tbody>
+        ${sorted.map(a=>{
+          const h=hMap[a.id];
+          const shares=h?+h.num_shares:0;
+          const avg=h?+h.avg_price:0;
+          const invested=shares*avg;
+          const hasPos=h&&shares>0;
+          return `<tr>
+            <td><span class="td-mono" style="font-weight:600">${a.ticker}</span></td>
+            <td>${a.name}</td>
+            <td class="td-mono">${hasPos?fmtShares(shares):'<span class="td-dim">&#x2014;</span>'}</td>
+            <td class="td-mono">${hasPos?fmt(avg,2)+' &#x20ac;':'<span class="td-dim">&#x2014;</span>'}</td>
+            <td class="td-dim" style="font-size:12px">${h&&h.last_purchase_date?formatDate(h.last_purchase_date):'&#x2014;'}</td>
+            <td class="td-mono">${hasPos?'<span class="pos">'+fmtBig(invested)+' &#x20ac;</span>':'<span class="td-dim">&#x2014;</span>'}</td>
+            <td><div class="td-actions"><button class="btn btn-primary btn-sm" onclick="openHolding('${a.id}')">${hasPos?'Editar':'+ Posi&#xe7;&#xe3;o'}</button></div></td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+
+/* ASSET MODAL */
+function openAddAsset() {
+  ['asset-id','f-ticker','f-name','f-isin'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-sector').value=''; document.getElementById('f-type').value='Stock';
+  document.getElementById('asset-modal-title').textContent='Adicionar Ativo';
+  document.getElementById('fetch-result').style.display='none';
+  document.getElementById('fetch-error').style.display='none';
+  document.getElementById('asset-modal').classList.add('open');
+}
+function openEditAsset(id) {
+  const a=allAssets.find(x=>x.id===id); if(!a) return;
+  document.getElementById('asset-modal-title').textContent='Editar Ativo';
+  document.getElementById('asset-id').value=a.id;
+  document.getElementById('f-ticker').value=a.ticker;
+  document.getElementById('f-name').value=a.name;
+  document.getElementById('f-isin').value=a.isin||'';
+  document.getElementById('f-sector').value=a.sector||'';
+  document.getElementById('f-type').value=a.asset_type||'Stock';
+  document.getElementById('fetch-result').style.display='none';
+  document.getElementById('fetch-error').style.display='none';
+  document.getElementById('asset-modal').classList.add('open');
+}
+function closeAssetModal() { document.getElementById('asset-modal').classList.remove('open'); }
+
+async function verifyTicker() {
+  const ticker=document.getElementById('f-ticker').value.trim().toUpperCase();
+  document.getElementById('f-ticker').value=ticker;
+  const rEl=document.getElementById('fetch-result'), eEl=document.getElementById('fetch-error');
+  rEl.style.display='none'; eEl.style.display='none';
+  if(!ticker){eEl.textContent='Introduz um ticker.';eEl.style.display='block';return;}
+  try {
+    const res=await fetch('/api/quote?symbols='+ticker);
+    const data=await res.json();
+    const q=data.quoteResponse?.result?.[0];
+    if(!q) throw new Error('Ticker nao encontrado');
+    const name=q.shortName||q.longName||ticker;
+    const type={EQUITY:'Stock',ETF:'ETF',CRYPTOCURRENCY:'Crypto'}[q.quoteType]||'Stock';
+    document.getElementById('f-name').value=name;
+    document.getElementById('f-type').value=type;
+    rEl.innerHTML='<b>'+q.symbol+'</b> &mdash; '+name+' &middot; '+q.quoteType+' &middot; '+(q.currency||'');
+    rEl.style.display='block';
+  } catch(e) {
+    eEl.textContent='Erro: '+e.message+'. Verifica o ticker no Yahoo Finance.';
+    eEl.style.display='block';
+  }
+}
+
+async function saveAsset() {
+  const id=document.getElementById('asset-id').value;
+  const ticker=document.getElementById('f-ticker').value.trim().toUpperCase();
+  const name=document.getElementById('f-name').value.trim();
+  const isin=document.getElementById('f-isin').value.trim();
+  const sector=document.getElementById('f-sector').value;
+  const type=document.getElementById('f-type').value;
+  if(!ticker||!name){toast('Ticker e Nome s&#xe3;o obrigat&#xf3;rios','error');return;}
+  const payload={ticker,name,isin:isin||null,sector:sector||null,asset_type:type};
+  let err;
+  if(id){const r=await sb.from('assets').update(payload).eq('id',id);err=r.error;}
+  else{const r=await sb.from('assets').insert(payload);err=r.error;}
+  if(err){toast('Erro: '+err.message,'error');return;}
+  closeAssetModal();
+  toast(id?'Ativo atualizado!':'Ativo adicionado!','success');
+  await loadData();
+}
+
+async function confirmDeleteAsset(id,ticker) {
+  if(!confirm('Eliminar '+ticker+'?\nIsso vai remover a posicao e da watchlist.')) return;
+  const{error}=await sb.from('assets').delete().eq('id',id);
+  if(error){toast('Erro: '+error.message,'error');return;}
+  toast(ticker+' eliminado','success');
+  await loadData();
+}
+
+/* HOLDING MODAL */
+function openHolding(assetId) {
+  const a=allAssets.find(x=>x.id===assetId);
+  const h=allHoldings.find(x=>x.asset_id===assetId);
+  document.getElementById('holding-modal-title').textContent=(h?'Editar':'Nova posi\xe7\xe3o')+' \u2014 '+a.ticker;
+  document.getElementById('h-asset-id').value=assetId;
+  document.getElementById('h-holding-id').value=h?.id||'';
+  document.getElementById('h-asset-name').value=a.ticker+' \u2014 '+a.name;
+  document.getElementById('h-shares').value=h?.num_shares||'';
+  document.getElementById('h-avg-price').value=h?.avg_price||'';
+  document.getElementById('h-date').value=h?.last_purchase_date||'';
+  document.getElementById('h-delete-btn').style.display=h?'inline-flex':'none';
+  document.getElementById('holding-modal').classList.add('open');
+}
+function closeHoldingModal(){document.getElementById('holding-modal').classList.remove('open');}
+
+async function saveHolding() {
+  const assetId=document.getElementById('h-asset-id').value;
+  const holdingId=document.getElementById('h-holding-id').value;
+  const shares=parseFloat(document.getElementById('h-shares').value);
+  const avgPrice=parseFloat(document.getElementById('h-avg-price').value);
+  const date=document.getElementById('h-date').value||null;
+  if(!shares||shares<=0){toast('N\xba de a\xe7\xf5es inv\xe1lido','error');return;}
+  if(!avgPrice||avgPrice<=0){toast('Pre\xe7o m\xe9dio inv\xe1lido','error');return;}
+  const payload={asset_id:assetId,num_shares:shares,avg_price:avgPrice,last_purchase_date:date,updated_at:new Date().toISOString()};
+  let err;
+  if(holdingId){const r=await sb.from('holdings').update(payload).eq('id',holdingId);err=r.error;}
+  else{const r=await sb.from('holdings').insert(payload);err=r.error;}
+  if(err){toast('Erro: '+err.message,'error');return;}
+  closeHoldingModal();
+  toast('Posi\xe7\xe3o guardada!','success');
+  await loadData();
+}
+
+async function deleteHolding() {
+  const holdingId=document.getElementById('h-holding-id').value;
+  if(!holdingId) return;
+  if(!confirm('Remover esta posi\xe7\xe3o da carteira?')) return;
+  const{error}=await sb.from('holdings').delete().eq('id',holdingId);
+  if(error){toast('Erro: '+error.message,'error');return;}
+  closeHoldingModal();
+  toast('Posi\xe7\xe3o removida','success');
+  await loadData();
+}
+
+/* TOAST */
+function toast(msg,type='success'){
+  const el=document.getElementById('toast');
+  el.textContent=(type==='success'?'\u2713  ':'\u2715  ')+msg;
+  el.className='show '+type;
+  clearTimeout(window._tt);
+  window._tt=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+/* HELPERS */
+function fmt(n,d=2){if(n==null||isNaN(n))return '\u2014';return n.toLocaleString('pt-PT',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function fmtBig(n){if(n==null||isNaN(n))return '\u2014';const a=Math.abs(n);if(a>=1e9)return (n/1e9).toFixed(2)+' B';if(a>=1e6)return (n/1e6).toFixed(2)+' M';if(a>=1e3)return (n/1e3).toFixed(1)+' K';return n.toFixed(2);}
+function fmtShares(n){return n%1===0?n.toFixed(0):n.toFixed(n<1?4:2);}
+function formatDate(s){if(!s)return '\u2014';return new Date(s).toLocaleDateString('pt-PT');}
+
+document.getElementById('asset-modal').addEventListener('click',function(e){if(e.target===this)closeAssetModal();});
+document.getElementById('holding-modal').addEventListener('click',function(e){if(e.target===this)closeHoldingModal();});
+</script>
+</body>
+</html>
