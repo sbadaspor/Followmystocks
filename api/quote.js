@@ -1,64 +1,54 @@
-// api/quote.js — Proxy para Yahoo Finance com fallback e cookies
+// api/quote.js — Finnhub live quotes (parallel per symbol)
+const FINNHUB_KEY = 'ct2affhr01qiurr3qhf0ct2affhr01qiurr3qhfg';
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'no-store');
 
   const { symbols } = req.query;
-  if (!symbols) return res.status(400).json({ error: 'symbols param required' });
+  if (!symbols) return res.status(400).json({ error: 'symbols required' });
 
-  const headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Origin': 'https://finance.yahoo.com',
-    'Referer': 'https://finance.yahoo.com/',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-site',
-  };
+  const tickers = symbols.split(',').map(s => s.trim()).filter(Boolean);
 
-  const fields = [
-    'regularMarketPrice', 'regularMarketChange', 'regularMarketChangePercent',
-    'trailingPE', 'currency', 'shortName', 'longName', 'quoteType',
-    'marketCap', 'regularMarketVolume',
-  ].join(',');
+  // Fetch all quotes in parallel (Finnhub free has no batch endpoint)
+  const results = await Promise.allSettled(
+    tickers.map(async (ticker) => {
+      const fhSymbol = toFinnhub(ticker);
+      const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(fhSymbol)}&token=${FINNHUB_KEY}`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      if (!data.c || data.c === 0) throw new Error('No price data');
+      return {
+        symbol:                       ticker,
+        regularMarketPrice:           data.c,
+        regularMarketChange:          data.d,
+        regularMarketChangePercent:   data.dp,
+        regularMarketPreviousClose:   data.pc,
+        regularMarketHigh:            data.h,
+        regularMarketLow:             data.l,
+      };
+    })
+  );
 
-  // Try v7 on query1, then query2 as fallback
-  const urls = [
-    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}&fields=${fields}`,
-    `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols)}&fields=${fields}`,
-    // v8 fallback
-    `https://query1.finance.yahoo.com/v8/finance/quote?symbols=${encodeURIComponent(symbols)}`,
-  ];
+  const result = results
+    .filter(r => r.status === 'fulfilled')
+    .map(r => r.value);
 
-  let lastError = null;
+  return res.status(200).json({ quoteResponse: { result } });
+}
 
-  for (const url of urls) {
-    try {
-      const response = await fetch(url, { headers });
-
-      if (!response.ok) {
-        lastError = `HTTP ${response.status}`;
-        continue;
-      }
-
-      const data = await response.json();
-      const result = data.quoteResponse?.result;
-
-      if (result && result.length > 0) {
-        return res.status(200).json(data);
-      }
-
-      lastError = 'Empty result';
-    } catch (err) {
-      lastError = err.message;
-    }
-  }
-
-  // All attempts failed
-  console.error(`Quote failed for ${symbols}: ${lastError}`);
-  return res.status(200).json({
-    quoteResponse: { result: [], error: lastError }
-  });
+// Convert Yahoo Finance ticker → Finnhub symbol
+function toFinnhub(ticker) {
+  if (ticker.endsWith('.DE'))  return 'XETRA:'  + ticker.replace('.DE', '');
+  if (ticker.endsWith('.L'))   return 'LSE:'    + ticker.replace('.L', '');
+  if (ticker.endsWith('.PA'))  return 'EURONEXT:'+ ticker.replace('.PA', '');
+  if (ticker.endsWith('.AS'))  return 'EURONEXT:'+ ticker.replace('.AS', '');
+  if (ticker.endsWith('.LS'))  return 'EURONEXT:'+ ticker.replace('.LS', '');
+  if (ticker.endsWith('.MC'))  return 'BME:'    + ticker.replace('.MC', '');
+  if (ticker.endsWith('.MI'))  return 'MIL:'    + ticker.replace('.MI', '');
+  if (ticker === 'BTC-USD')    return 'BINANCE:BTCUSDT';
+  if (ticker === 'ETH-USD')    return 'BINANCE:ETHUSDT';
+  if (ticker.endsWith('-USD'))  return 'BINANCE:' + ticker.replace('-USD','') + 'USDT';
+  return ticker; // US stocks: AAPL, MSFT, V, etc.
 }
