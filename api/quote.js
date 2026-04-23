@@ -10,15 +10,13 @@ export default async function handler(req, res) {
 
   const tickers = symbols.split(',').map(s => s.trim()).filter(Boolean);
 
-  // Fetch exchange rates from ECB via Frankfurter (free, no key, official rates)
-  // Returns: how many EUR per 1 unit of foreign currency
-  let rates = { USD: 0.92, GBP: 1.17 }; // sensible fallbacks
+  // Fetch exchange rates from ECB - from=USD gives EUR per 1 USD directly
+  let rates = { USD: 0.92, GBP: 1.17 };
   try {
-    const fxRes = await fetch('https://api.frankfurter.app/latest?from=EUR&to=USD,GBP');
+    const fxRes = await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,GBP');
     const fxData = await fxRes.json();
-    // fxData.rates = { USD: 1.08, GBP: 0.85 } → EUR per USD = 1/1.08
-    if (fxData.rates?.USD) rates.USD = 1 / fxData.rates.USD; // EUR per 1 USD
-    if (fxData.rates?.GBP) rates.GBP = 1 / fxData.rates.GBP; // EUR per 1 GBP
+    if (fxData.rates?.EUR) rates.USD = fxData.rates.EUR; // EUR per 1 USD
+    if (fxData.rates?.GBP) rates.GBP = fxData.rates.GBP; // GBP per 1 USD → we want EUR per GBP
   } catch (e) {
     console.error('FX fetch failed:', e.message);
   }
@@ -42,11 +40,11 @@ export default async function handler(req, res) {
 
       let fx;
       if (isEuropean && !isGBp) {
-        fx = 1;              // Already EUR
+        fx = 1;                    // Already EUR
       } else if (isGBp) {
-        fx = rates.GBP / 100; // GBp → GBP → EUR
+        fx = rates.USD * (1/rates.GBP) / 100; // GBp → GBP → EUR
       } else {
-        fx = rates.USD;      // USD → EUR
+        fx = rates.USD;            // USD → EUR
       }
 
       return {
