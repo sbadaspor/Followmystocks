@@ -303,19 +303,22 @@
 <script>
 const SUPABASE_URL      = 'https://xzxnjifpgvshzlsxhags.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eG5qaWZwZ3ZzaHpsc3hoYWdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MDYzMjQsImV4cCI6MjA5MjQ4MjMyNH0.HlfyTZxvcPcPTR0yWCBUVU8vKm9ncaPVSqBW9LhJvE4';
-const PWD_HASH = '16dc6e887e4cf958c9a93a4bda5edabf822dd0737d516f23be2256f7f48fa76e';
+const ADMIN_PWD = '6qfO5CJ2@';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let allAssets = [], allHoldings = [], currentTab = 'overview';
 
 /* AUTH */
-async function doLogin() {
+function doLogin() {
   const pwd = document.getElementById('pwd-input').value;
   const errEl = document.getElementById('login-error');
   errEl.textContent = '';
   if (!pwd) { errEl.textContent = 'Introduz a password.'; return; }
-  const hash = await sha256(pwd);
-  if (hash !== PWD_HASH) { errEl.textContent = 'Password incorreta.'; document.getElementById('pwd-input').value = ''; return; }
+  if (pwd !== ADMIN_PWD) {
+    errEl.textContent = 'Password incorreta.';
+    document.getElementById('pwd-input').value = '';
+    return;
+  }
   sessionStorage.setItem('fs-admin','1');
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
@@ -328,10 +331,6 @@ function doLogout() {
   document.getElementById('pwd-input').value = '';
 }
 function togglePwd() { const i=document.getElementById('pwd-input'); i.type=i.type==='password'?'text':'password'; }
-async function sha256(msg) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
 if (sessionStorage.getItem('fs-admin')==='1') {
   document.getElementById('login-screen').style.display='none';
   document.getElementById('dashboard').style.display='block';
