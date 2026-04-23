@@ -443,6 +443,248 @@
     @keyframes flash-down { 0%,100%{background:transparent} 30%{background:rgba(255,61,88,.15)} }
     .flash-up   { animation: flash-up .6s ease; border-radius: 4px; }
     .flash-down { animation: flash-down .6s ease; border-radius: 4px; }
+
+    /* ─── LISTING SECTION ───────────────────────── */
+    .lst-topbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .lst-filters {
+      display: flex;
+      gap: 4px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+    }
+
+    .lst-filter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 7px;
+      border: none;
+      background: transparent;
+      color: var(--dim);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+
+    .lst-filter:hover { color: var(--text); background: rgba(255,255,255,.04); }
+    .lst-filter.active { color: var(--text); background: rgba(255,255,255,.08); }
+
+    .lst-count {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255,255,255,.07);
+      padding: 1px 7px;
+      border-radius: 99px;
+      color: var(--dim);
+    }
+    .lst-filter.active .lst-count { color: var(--text); background: rgba(255,255,255,.12); }
+
+    .lst-controls {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+      align-items: center;
+    }
+
+    .lst-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      color: var(--dim);
+      transition: border-color .15s;
+    }
+    .lst-search:focus-within { border-color: var(--border-h); }
+
+    .lst-search input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      width: 220px;
+    }
+    .lst-search input::placeholder { color: var(--muted); }
+
+    .lst-sector-select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      padding: 7px 32px 7px 12px;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b6b80' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    /* Table */
+    .lst-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card);
+    }
+
+    .lst-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 900px;
+    }
+
+    .lst-table thead tr {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .lst-table th {
+      padding: 11px 14px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--muted);
+      text-align: left;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .lst-table th.col-num { text-align: right; }
+    .lst-table th.sortable { cursor: pointer; }
+    .lst-table th.sortable:hover { color: var(--dim); }
+    .lst-table th.sort-asc  .sort-icon::after { content: ' ↑'; }
+    .lst-table th.sort-desc .sort-icon::after { content: ' ↓'; }
+    .sort-icon { opacity: .4; font-size: 9px; }
+    .lst-table th.sort-asc, .lst-table th.sort-desc { color: var(--text); }
+    .lst-table th.sort-asc  .sort-icon,
+    .lst-table th.sort-desc .sort-icon { opacity: 1; }
+
+    .lst-table th.col-star   { width: 40px; padding: 11px 8px 11px 16px; }
+    .lst-table th.col-ticker { width: 80px; }
+    .lst-table th.col-nome   { min-width: 160px; }
+    .lst-table th.col-setor  { width: 160px; }
+    .lst-table th.col-num    { width: 90px; }
+    .lst-table th.col-action { width: 48px; }
+
+    .lst-table tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,.03);
+      transition: background .12s;
+      cursor: pointer;
+    }
+    .lst-table tbody tr:last-child { border-bottom: none; }
+    .lst-table tbody tr:hover { background: rgba(255,255,255,.03); }
+
+    .lst-table td {
+      padding: 13px 14px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .lst-table td.col-star  { padding: 13px 8px 13px 16px; }
+    .lst-table td.col-num   { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+    .lst-table td.col-action { text-align: center; }
+
+    .star-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 2px;
+      line-height: 1;
+      font-size: 15px;
+      transition: color .15s, transform .15s;
+    }
+    .star-btn:hover { color: #f5b731; transform: scale(1.15); }
+    .star-btn.starred { color: #f5b731; }
+
+    .tbl-ticker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .02em;
+    }
+
+    .tbl-name {
+      color: var(--dim);
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tbl-sector-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 500;
+      background: rgba(255,255,255,.05);
+      color: var(--dim);
+      border: 1px solid var(--border);
+    }
+
+    .tbl-val { color: var(--text); }
+    .tbl-na  { color: var(--muted); }
+    .tbl-pos { color: var(--green); }
+    .tbl-neg { color: var(--red); }
+
+    .tbl-sk {
+      display: inline-block;
+      width: 48px;
+      height: 11px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--card) 25%, rgba(255,255,255,.04) 50%, var(--card) 75%);
+      background-size: 300% 100%;
+      animation: sk 1.6s ease infinite;
+    }
+
+    .action-btn {
+      width: 26px; height: 26px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      transition: all .15s;
+    }
+    .action-btn:hover { background: rgba(255,255,255,.07); color: var(--text); }
+    .action-btn.in-portfolio {
+      background: rgba(15,224,122,.1);
+      border-color: rgba(15,224,122,.25);
+      color: var(--green);
+    }
+
+    .lst-empty {
+      text-align: center;
+      padding: 56px 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -455,11 +697,15 @@
   </a>
 
   <nav>
-    <a href="#" class="active">
+    <a href="#" class="active" onclick="switchTab('carteira',this);return false;">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="7" height="9" rx="1"/><rect x="15" y="12" width="7" height="9" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/></svg>
       Carteira
     </a>
-    <a href="#">
+    <a href="#" onclick="switchTab('listagem',this);return false;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Listagem de ativos
+    </a>
+    <a href="#" onclick="switchTab('explorar',this);return false;">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       Explorar
     </a>
@@ -478,6 +724,9 @@
 
 <!-- ─────────── MAIN ────────────────────────────── -->
 <main>
+
+  <!-- ═══ CARTEIRA SECTION ══════════════════════════════ -->
+  <div id="section-carteira">
 
   <!-- Config notice (hidden if configured) -->
   <div class="cfg-notice" id="cfg-notice" style="display:none">
@@ -526,6 +775,64 @@
     <div class="sk-card"><div class="sk" style="height:12px;width:35%;margin-bottom:6px"></div><div class="sk" style="height:9px;width:55%"></div></div>
     <div class="sk-card"><div class="sk" style="height:12px;width:35%;margin-bottom:6px"></div><div class="sk" style="height:9px;width:55%"></div></div>
   </div>
+
+  </div><!-- /#section-carteira -->
+
+  <!-- ═══ LISTAGEM SECTION ══════════════════════════════ -->
+  <div id="section-listagem" style="display:none">
+
+    <!-- Top bar: filters + search + sector -->
+    <div class="lst-topbar">
+      <div class="lst-filters">
+        <button class="lst-filter active" data-filter="todos"      onclick="setListFilter('todos',this)">
+          Todos <span class="lst-count" id="cnt-todos">—</span>
+        </button>
+        <button class="lst-filter" data-filter="carteira"  onclick="setListFilter('carteira',this)">
+          Em carteira <span class="lst-count" id="cnt-carteira">—</span>
+        </button>
+        <button class="lst-filter" data-filter="seguidos"  onclick="setListFilter('seguidos',this)">
+          Seguidos <span class="lst-count" id="cnt-seguidos">—</span>
+        </button>
+      </div>
+
+      <div class="lst-controls">
+        <div class="lst-search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="lst-search-input" placeholder="Pesquisar ticker ou nome..." oninput="applyListFilters()">
+        </div>
+        <select class="lst-sector-select" id="lst-sector-select" onchange="applyListFilters()">
+          <option value="">Todas as áreas</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="lst-table-wrap">
+      <table class="lst-table">
+        <thead>
+          <tr>
+            <th class="col-star"></th>
+            <th class="col-ticker">Ticker</th>
+            <th class="col-nome">Nome</th>
+            <th class="col-setor">Setor</th>
+            <th class="col-num sortable" onclick="sortTable('pe')"     title="Price-to-Earnings">P/E <span class="sort-icon">↕</span></th>
+            <th class="col-num sortable" onclick="sortTable('peg')"    title="Price/Earnings to Growth">PEG <span class="sort-icon">↕</span></th>
+            <th class="col-num sortable" onclick="sortTable('debtEq')" title="Total Debt / Equity">Debt/Eq <span class="sort-icon">↕</span></th>
+            <th class="col-num sortable" onclick="sortTable('ltDebt')" title="Long-Term Debt / Equity">Lt Debt/Eq <span class="sort-icon">↕</span></th>
+            <th class="col-num sortable" onclick="sortTable('eps')"    title="Earnings Per Share (trailing)">EPS <span class="sort-icon">↕</span></th>
+            <th class="col-num sortable" onclick="sortTable('divY')"   title="Dividend Yield">Div Yield <span class="sort-icon">↕</span></th>
+            <th class="col-num sortable" onclick="sortTable('roic')"   title="Return on Invested Capital (ROE proxy)">ROIC <span class="sort-icon">↕</span></th>
+            <th class="col-num sortable" onclick="sortTable('gm')"     title="Gross Margin">Gross Margin <span class="sort-icon">↕</span></th>
+            <th class="col-action"></th>
+          </tr>
+        </thead>
+        <tbody id="lst-tbody">
+          <tr><td colspan="13" style="text-align:center;padding:48px;color:var(--muted)">A carregar ativos...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /#section-listagem -->
 
 </main>
 
@@ -896,6 +1203,289 @@ function setEl(id, val, cls) {
 
 function openAsset(id) {
   window.location.href = `asset.html?id=${id}`;
+}
+
+// ── Tab switching ──────────────────────────────────
+function switchTab(tab, el) {
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('section-carteira').style.display = tab === 'carteira' ? '' : 'none';
+  document.getElementById('section-listagem').style.display = tab === 'listagem' ? '' : 'none';
+  if (tab === 'listagem' && !listingLoaded) loadListing();
+}
+
+// ── LISTING ────────────────────────────────────────
+let listingLoaded  = false;
+let listingData    = [];     // { asset, inPortfolio, financials, starred }
+let listingFilter  = 'todos';
+let listingSort    = { col: null, dir: 1 };
+let holdingTickers = new Set();
+let watchedIds     = new Set();
+
+async function loadListing() {
+  listingLoaded = true;
+
+  try {
+    // Load all assets + holdings + watchlist in parallel
+    const [assetsRes, holdingsRes, watchRes] = await Promise.all([
+      sb.from('assets').select('*').order('name'),
+      sb.from('holdings').select('asset_id, num_shares').gt('num_shares', 0),
+      sb.from('watchlist').select('asset_id')
+    ]);
+
+    if (assetsRes.error) throw assetsRes.error;
+
+    holdingTickers = new Set((holdingsRes.data || []).map(h => h.asset_id));
+    watchedIds     = new Set((watchRes.data    || []).map(w => w.asset_id));
+
+    const assets = assetsRes.data || [];
+    listingData = assets.map(a => ({
+      asset:       a,
+      inPortfolio: holdingTickers.has(a.id),
+      starred:     watchedIds.has(a.id),
+      financials:  null   // loaded progressively
+    }));
+
+    // Update counts
+    updateCounts();
+
+    // Populate sector dropdown
+    const sectors = [...new Set(assets.map(a => a.sector).filter(Boolean))].sort();
+    const sel = document.getElementById('lst-sector-select');
+    sectors.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      sel.appendChild(opt);
+    });
+
+    // Render table immediately with skeleton financials
+    renderListingTable();
+
+    // Fetch financials progressively, 3 at a time
+    await fetchAllFinancials(assets);
+
+  } catch (err) {
+    console.error('Listing error:', err);
+    document.getElementById('lst-tbody').innerHTML = `
+      <tr><td colspan="13" class="lst-empty">Erro ao carregar: ${err.message}</td></tr>`;
+  }
+}
+
+async function fetchAllFinancials(assets) {
+  const BATCH = 3; // parallel requests per batch
+  for (let i = 0; i < assets.length; i += BATCH) {
+    const batch = assets.slice(i, i + BATCH);
+    await Promise.all(batch.map(async (a) => {
+      try {
+        const res = await fetch(`/api/financials?symbol=${encodeURIComponent(a.ticker)}`);
+        const data = await res.json();
+        const idx = listingData.findIndex(d => d.asset.id === a.id);
+        if (idx !== -1) {
+          listingData[idx].financials = data;
+          updateListingRow(listingData[idx]);
+        }
+      } catch {}
+    }));
+    // Small pause between batches to avoid rate limiting
+    if (i + BATCH < assets.length) await sleep(150);
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function updateCounts() {
+  const visible = getFilteredData();
+  document.getElementById('cnt-todos').textContent    = listingData.length;
+  document.getElementById('cnt-carteira').textContent = listingData.filter(d => d.inPortfolio).length;
+  document.getElementById('cnt-seguidos').textContent = listingData.filter(d => d.starred).length;
+}
+
+function setListFilter(f, el) {
+  listingFilter = f;
+  document.querySelectorAll('.lst-filter').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  applyListFilters();
+}
+
+function applyListFilters() { renderListingTable(); }
+
+function getFilteredData() {
+  const search = document.getElementById('lst-search-input')?.value.toLowerCase() || '';
+  const sector = document.getElementById('lst-sector-select')?.value || '';
+  return listingData.filter(d => {
+    if (listingFilter === 'carteira' && !d.inPortfolio) return false;
+    if (listingFilter === 'seguidos' && !d.starred)     return false;
+    if (sector && d.asset.sector !== sector)            return false;
+    if (search && !d.asset.ticker.toLowerCase().includes(search) &&
+                  !d.asset.name.toLowerCase().includes(search))  return false;
+    return true;
+  });
+}
+
+function sortTable(col) {
+  const ths = document.querySelectorAll('.lst-table th');
+  ths.forEach(th => th.classList.remove('sort-asc','sort-desc'));
+
+  if (listingSort.col === col) {
+    listingSort.dir *= -1;
+  } else {
+    listingSort.col = col;
+    listingSort.dir = -1; // default: desc
+  }
+
+  // Mark header
+  const colMap = { pe:5, peg:6, debtEq:7, ltDebt:8, eps:9, divY:10, roic:11, gm:12 };
+  const thIdx = colMap[col];
+  if (thIdx !== undefined) {
+    const th = document.querySelectorAll('.lst-table th')[thIdx];
+    th?.classList.add(listingSort.dir === 1 ? 'sort-asc' : 'sort-desc');
+  }
+
+  renderListingTable();
+}
+
+function getFinancialVal(d, col) {
+  const f = d.financials;
+  if (!f) return null;
+  switch (col) {
+    case 'pe':     return f.pe;
+    case 'peg':    return f.peg;
+    case 'debtEq': return f.debtToEquity;
+    case 'ltDebt': return f.longTermDebtToEquity;
+    case 'eps':    return f.eps;
+    case 'divY':   return f.dividendYield;
+    case 'roic':   return f.roic;
+    case 'gm':     return f.grossMargin;
+    default:       return null;
+  }
+}
+
+function renderListingTable() {
+  let data = getFilteredData();
+
+  // Sort
+  if (listingSort.col) {
+    data = [...data].sort((a, b) => {
+      const va = getFinancialVal(a, listingSort.col) ?? -Infinity;
+      const vb = getFinancialVal(b, listingSort.col) ?? -Infinity;
+      return (va - vb) * listingSort.dir;
+    });
+  }
+
+  if (data.length === 0) {
+    document.getElementById('lst-tbody').innerHTML =
+      `<tr><td colspan="13" class="lst-empty">Nenhum ativo encontrado.</td></tr>`;
+    return;
+  }
+
+  document.getElementById('lst-tbody').innerHTML = data.map(d => rowHTML(d)).join('');
+}
+
+function updateListingRow(d) {
+  const row = document.querySelector(`tr[data-id="${d.asset.id}"]`);
+  if (!row) return;
+  const newRow = document.createElement('tr');
+  newRow.innerHTML = rowHTML(d);
+  const inner = newRow.firstElementChild?.parentElement;
+  if (inner) {
+    // Update just the financial cells (cols 5-12)
+    const cells = row.querySelectorAll('td');
+    const newCells = newRow.querySelectorAll('td');
+    [4,5,6,7,8,9,10,11].forEach(i => {
+      if (cells[i] && newCells[i]) cells[i].outerHTML = newCells[i].outerHTML;
+    });
+  }
+}
+
+function rowHTML(d) {
+  const a = d.asset;
+  const f = d.financials;
+  const sk = '<span class="tbl-sk"></span>';
+
+  function fval(v, suffix = '', decimals = 1, isPercent = false) {
+    if (f === null) return sk;
+    if (v == null || isNaN(v)) return '<span class="tbl-na">—</span>';
+    const n = isPercent ? (v * 100) : v;
+    return `<span class="tbl-val">${n.toFixed(decimals)}${suffix}</span>`;
+  }
+
+  // Debt/Eq: Yahoo returns as %, divide by 100
+  function fdebt(v) {
+    if (f === null) return sk;
+    if (v == null || isNaN(v)) return '<span class="tbl-na">—</span>';
+    return `<span class="tbl-val">${(v / 100).toFixed(2)}</span>`;
+  }
+
+  function fdivY(v) {
+    if (f === null) return sk;
+    if (v == null || isNaN(v)) return '<span class="tbl-na">—</span>';
+    return `<span class="tbl-pos">${(v * 100).toFixed(2)}%</span>`;
+  }
+
+  function froic(v) {
+    if (f === null) return sk;
+    if (v == null || isNaN(v)) return '<span class="tbl-na">—</span>';
+    const pct = (v * 100).toFixed(1);
+    return `<span class="${v >= 0 ? 'tbl-pos' : 'tbl-neg'}">${pct}%</span>`;
+  }
+
+  function fgm(v) {
+    if (f === null) return sk;
+    if (v == null || isNaN(v)) return '<span class="tbl-na">—</span>';
+    return `<span class="tbl-val">${(v * 100).toFixed(1)}%</span>`;
+  }
+
+  return `
+  <tr data-id="${a.id}" onclick="openAsset('${a.id}')">
+    <td class="col-star" onclick="event.stopPropagation()">
+      <button class="star-btn ${d.starred ? 'starred' : ''}"
+              onclick="toggleStar('${a.id}',this)" title="${d.starred ? 'Remover dos seguidos' : 'Adicionar aos seguidos'}">
+        ${d.starred ? '★' : '☆'}
+      </button>
+    </td>
+    <td><span class="tbl-ticker">${a.ticker}</span></td>
+    <td><span class="tbl-name">${a.name}</span></td>
+    <td><span class="tbl-sector-tag">${a.sector || '—'}</span></td>
+    <td class="col-num">${fval(f?.pe, '', 1)}</td>
+    <td class="col-num">${fval(f?.peg, '', 2)}</td>
+    <td class="col-num">${fdebt(f?.debtToEquity)}</td>
+    <td class="col-num">${fdebt(f?.longTermDebtToEquity)}</td>
+    <td class="col-num">${fval(f?.eps, '', 2)}</td>
+    <td class="col-num">${fdivY(f?.dividendYield)}</td>
+    <td class="col-num">${froic(f?.roic)}</td>
+    <td class="col-num">${fgm(f?.grossMargin)}</td>
+    <td class="col-action" onclick="event.stopPropagation()">
+      <button class="action-btn ${d.inPortfolio ? 'in-portfolio' : ''}"
+              title="${d.inPortfolio ? 'Em carteira' : 'Não está em carteira'}">
+        ${d.inPortfolio
+          ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+          : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+        }
+      </button>
+    </td>
+  </tr>`;
+}
+
+async function toggleStar(assetId, btn) {
+  if (!sb) return;
+  const idx = listingData.findIndex(d => d.asset.id === assetId);
+  if (idx === -1) return;
+
+  const isStarred = listingData[idx].starred;
+
+  if (isStarred) {
+    await sb.from('watchlist').delete().eq('asset_id', assetId);
+    listingData[idx].starred = false;
+    btn.textContent = '☆';
+    btn.classList.remove('starred');
+  } else {
+    await sb.from('watchlist').upsert({ asset_id: assetId });
+    listingData[idx].starred = true;
+    btn.textContent = '★';
+    btn.classList.add('starred');
+  }
+  updateCounts();
+  if (listingFilter === 'seguidos') renderListingTable();
 }
 
 init();
