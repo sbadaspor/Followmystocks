@@ -365,6 +365,11 @@ async function renderOverview() {
   const invested = holdings.reduce((s,h)=>s+(+h.avg_price*+h.num_shares),0);
   const wRes = await sb.from('watchlist').select('asset_id');
   const watchedN = wRes.data?.length||0;
+  const lastUpdated = allAssets.reduce((latest, a) => {
+    if (!a.fundamentals_updated_at) return latest;
+    return !latest || a.fundamentals_updated_at > latest ? a.fundamentals_updated_at : latest;
+  }, null);
+
   document.getElementById('tab-content').innerHTML = `
     <div class="page-hdr">
       <div><div class="page-title">Vis&#xe3;o Geral</div><div class="page-sub">Resumo da tua carteira</div></div>
@@ -379,20 +384,107 @@ async function renderOverview() {
       <div class="stat-card"><div class="stat-lbl">Seguidos</div><div class="stat-val" style="color:var(--amber)">${watchedN}</div><div class="stat-sub">na watchlist</div></div>
       <div class="stat-card"><div class="stat-lbl">Total Investido</div><div class="stat-val">${fmtBig(invested)} &#x20ac;</div><div class="stat-sub">ao pre&#xe7;o m&#xe9;dio de compra</div></div>
     </div>
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:16px">
+
+    <!-- FUNDAMENTAIS CARD -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-size:14px;font-weight:600">Fundamentais</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">
+            ${lastUpdated
+              ? 'Atualizado em ' + new Date(lastUpdated).toLocaleString('pt-PT')
+              : 'Ainda n&#xe3;o foram atualizados'}
+          </div>
+        </div>
+        <button class="btn btn-secondary" id="refresh-btn" onclick="refreshFundamentals()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Atualizar Fundamentais
+        </button>
+      </div>
+      <div id="refresh-progress" style="display:none">
+        <div style="height:4px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden;margin-bottom:10px">
+          <div id="progress-bar" style="height:100%;background:var(--accent);border-radius:99px;width:0%;transition:width .4s"></div>
+        </div>
+        <div id="progress-text" style="font-size:12px;color:var(--dim)">A iniciar...</div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6">
+        Clica em <b style="color:var(--dim)">Atualizar Fundamentais</b> para ir buscar P/E, EPS, margens, beta e outros dados de todos os ativos via Finnhub e guardá-los no Supabase.
+        Demora ~${Math.ceil(allAssets.length * 1.2 / 3 * 1.2 / 60)} min para ${allAssets.length} ativos. Faz isto 1x por semana.
+      </div>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:14px">
       <div style="font-size:14px;font-weight:600;margin-bottom:8px">Como usar o Admin</div>
       <div style="font-size:13px;color:var(--dim);line-height:1.8">
-        <b style="color:var(--text)">1. Ativos</b> &mdash; Adiciona os ativos que queres acompanhar. O bot&#xe3;o <b>Verificar</b> preenche o nome automaticamente via Yahoo Finance.<br>
-        <b style="color:var(--text)">2. Carteira</b> &mdash; Define o n&#xba; de a&#xe7;&#xf5;es e pre&#xe7;o m&#xe9;dio para cada posi&#xe7;&#xe3;o. Tudo o resto (pre&#xe7;o atual, varia&#xe7;&#xe3;o, retorno, P/E) &#xe9; autom&#xe1;tico.<br>
-        <b style="color:var(--text)">3. Site</b> &mdash; Os dados s&#xe3;o atualizados automaticamente a cada entrada no site e a cada 30 segundos.
+        <b style="color:var(--text)">1. Ativos</b> &mdash; Adiciona os ativos que queres acompanhar. O bot&#xe3;o <b>Verificar</b> preenche o nome via Finnhub.<br>
+        <b style="color:var(--text)">2. Carteira</b> &mdash; Define o n&#xba; de a&#xe7;&#xf5;es e pre&#xe7;o m&#xe9;dio para cada posi&#xe7;&#xe3;o.<br>
+        <b style="color:var(--text)">3. Fundamentais</b> &mdash; Clica em "Atualizar Fundamentais" acima. Os pre&#xe7;os live s&#xe3;o sempre autom&#xe1;ticos.
       </div>
     </div>
     <div style="background:rgba(97,83,245,.08);border:1px solid rgba(97,83,245,.25);border-radius:12px;padding:16px 20px">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:6px">Necess&#xe1;rio uma vez</div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:6px">Setup SQL (necess&#xe1;rio uma vez)</div>
       <div style="font-size:12px;color:var(--dim);line-height:1.6">
-        Corre o ficheiro <b style="color:var(--text)">supabase-admin-policies.sql</b> no SQL Editor do Supabase para ativar permiss&#xf5;es de escrita nesta p&#xe1;gina.
+        Corre <b style="color:var(--text)">supabase-admin-policies.sql</b> e <b style="color:var(--text)">supabase-fundamentals-migration.sql</b> no SQL Editor do Supabase.
       </div>
     </div>`;
+}
+
+/* REFRESH FUNDAMENTALS */
+async function refreshFundamentals() {
+  const btn = document.getElementById('refresh-btn');
+  const progressDiv = document.getElementById('refresh-progress');
+  const bar = document.getElementById('progress-bar');
+  const txt = document.getElementById('progress-text');
+
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> A atualizar...';
+  progressDiv.style.display = 'block';
+  bar.style.width = '5%';
+  txt.textContent = 'A ligar ao servidor...';
+
+  // Add spin animation
+  if (!document.getElementById('spin-style')) {
+    const s = document.createElement('style');
+    s.id = 'spin-style';
+    s.textContent = '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+
+  try {
+    // Simulate progress while waiting (the endpoint can take minutes for many assets)
+    let pct = 5;
+    const interval = setInterval(() => {
+      if (pct < 90) {
+        pct += Math.random() * 3;
+        bar.style.width = Math.min(pct, 90) + '%';
+        const done = Math.floor((pct / 100) * allAssets.length);
+        txt.textContent = `A processar... ~${done}/${allAssets.length} ativos`;
+      }
+    }, 1500);
+
+    const res = await fetch('/api/refresh-fundamentals');
+    clearInterval(interval);
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const result = await res.json();
+
+    bar.style.width = '100%';
+    txt.textContent = `Conclu&#xed;do! ${result.updated} atualizados, ${result.skipped} ignorados (crypto/ETF)${result.errors?.length ? ', ' + result.errors.length + ' erros' : ''}.`;
+    txt.style.color = 'var(--green)';
+
+    toast('Fundamentais atualizados! ' + result.updated + ' ativos.', 'success');
+    await loadData();
+
+  } catch(err) {
+    bar.style.width = '100%';
+    bar.style.background = 'var(--red)';
+    txt.textContent = 'Erro: ' + err.message;
+    txt.style.color = 'var(--red)';
+    toast('Erro ao atualizar: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Atualizar Fundamentais';
+  }
 }
 
 /* ASSETS */
@@ -499,18 +591,18 @@ async function verifyTicker() {
   rEl.style.display='none'; eEl.style.display='none';
   if(!ticker){eEl.textContent='Introduz um ticker.';eEl.style.display='block';return;}
   try {
-    const res=await fetch('/api/quote?symbols='+ticker);
+    const res=await fetch('/api/quote?symbols='+encodeURIComponent(ticker));
     const data=await res.json();
     const q=data.quoteResponse?.result?.[0];
-    if(!q) throw new Error('Ticker nao encontrado');
+    if(!q) throw new Error('Ticker n\xe3o encontrado no Finnhub');
     const name=q.shortName||q.longName||ticker;
-    const type={EQUITY:'Stock',ETF:'ETF',CRYPTOCURRENCY:'Crypto'}[q.quoteType]||'Stock';
     document.getElementById('f-name').value=name;
-    document.getElementById('f-type').value=type;
-    rEl.innerHTML='<b>'+q.symbol+'</b> &mdash; '+name+' &middot; '+q.quoteType+' &middot; '+(q.currency||'');
+    rEl.innerHTML='&#x2713; <b>'+ticker+'</b> &mdash; '+name+' &middot; Pre\xe7o: '+(q.regularMarketPrice||'—');
     rEl.style.display='block';
   } catch(e) {
-    eEl.textContent='Erro: '+e.message+'. Verifica o ticker no Yahoo Finance.';
+    eEl.textContent='Ticker n\xe3o encontrado. Para ETFs europeus usa o formato sem sufixo (ex: VWCE em vez de VWCE.DE).';
+    eEl.style.display='block';
+  }
     eEl.style.display='block';
   }
 }
