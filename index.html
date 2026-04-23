@@ -1020,7 +1020,7 @@ function renderPortfolio(animate = false) {
     const retPos   = retEur >= 0;
 
     return `
-    <div class="asset-card ${isPos ? 'pos' : 'neg'}" data-ticker="${asset.ticker}" onclick="openAsset('${asset.id}')">
+    <div class="asset-card ${isPos ? 'pos' : 'neg'}" data-ticker="${asset.ticker}" onclick="openAsset('${asset.id}','${asset.ticker}')">
       <div class="card-top">
         <div>
           <div class="card-ticker">${asset.ticker}</div>
@@ -1201,8 +1201,20 @@ function setEl(id, val, cls) {
   if (cls) { el.className = cls; }
 }
 
-function openAsset(id) {
-  window.location.href = `asset.html?id=${id}`;
+// Map ticker -> dedicated analysis page
+const ANALYSIS_PAGES = {
+  'V':    'visa-analysis.html',
+  // Add more here as they are created:
+  // 'MSFT': 'msft-analysis.html',
+  // 'NKE':  'nike-analysis.html',
+};
+
+function openAsset(id, ticker) {
+  if (ticker && ANALYSIS_PAGES[ticker]) {
+    window.location.href = ANALYSIS_PAGES[ticker];
+  } else {
+    window.location.href = 'asset.html?id=' + id;
+  }
 }
 
 // ── Tab switching ──────────────────────────────────
@@ -1436,7 +1448,7 @@ function rowHTML(d) {
   }
 
   return `
-  <tr data-id="${a.id}" onclick="openAsset('${a.id}')">
+  <tr data-id="${a.id}" onclick="openAsset('${a.id}','${a.ticker}')">
     <td class="col-star" onclick="event.stopPropagation()">
       <button class="star-btn ${d.starred ? 'starred' : ''}"
               onclick="toggleStar('${a.id}',this)" title="${d.starred ? 'Remover dos seguidos' : 'Adicionar aos seguidos'}">
