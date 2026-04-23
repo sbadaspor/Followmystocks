@@ -11,14 +11,14 @@ export default async function handler(req, res) {
   if (!symbol) return res.status(400).json({ error: 'symbol required' });
 
   try {
-    // 1. EUR rate from ECB
+    // 1. EUR rate from ECB - from=USD gives how many EUR per 1 USD directly
     let eurPerUsd = 0.92;
     let eurPerGbp = 1.17;
     try {
-      const fxRes  = await fetch('https://api.frankfurter.app/latest?from=EUR&to=USD,GBP');
+      const fxRes  = await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,GBP');
       const fxData = await fxRes.json();
-      if (fxData.rates && fxData.rates.USD) eurPerUsd = 1 / fxData.rates.USD;
-      if (fxData.rates && fxData.rates.GBP) eurPerGbp = 1 / fxData.rates.GBP;
+      if (fxData.rates && fxData.rates.EUR) eurPerUsd = fxData.rates.EUR;
+      if (fxData.rates && fxData.rates.GBP) eurPerGbp = fxData.rates.GBP / fxData.rates.EUR;
     } catch (_) {}
 
     const fhSymbol   = toFinnhub(symbol);
