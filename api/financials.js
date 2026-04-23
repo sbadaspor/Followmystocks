@@ -1,81 +1,81 @@
-// api/financials.js — Dados fundamentais via Yahoo Finance quoteSummary
+// api/financials.js — Fundamentals from Supabase (stored) or Finnhub fallback
+const FINNHUB_KEY  = 'ct2affhr01qiurr3qhf0ct2affhr01qiurr3qhfg';
+const SUPABASE_URL = 'https://xzxnjifpgvshzlsxhags.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eG5qaWZwZ3ZzaHpsc3hoYWdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MDYzMjQsImV4cCI6MjA5MjQ4MjMyNH0.HlfyTZxvcPcPTR0yWCBUVU8vKm9ncaPVSqBW9LhJvE4';
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 'public, max-age=3600'); // cache 1h (dados mudam pouco)
+  res.setHeader('Cache-Control', 'public, max-age=3600');
 
   const { symbol } = req.query;
   if (!symbol) return res.status(400).json({ error: 'symbol required' });
 
   try {
-    const modules = 'keyStatistics,financialData,summaryDetail,defaultKeyStatistics';
-    const url = `https://query1.finance.yahoo.com/v11/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=${modules}`;
+    // 1. Try to get from Supabase first (populated by Admin → Atualizar Fundamentais)
+    const sbRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/assets?ticker=eq.${encodeURIComponent(symbol)}&select=pe,peg,eps,dividend_yield,gross_margin,op_margin,net_margin,roic,debt_equity,lt_debt_equity,beta,market_cap,current_ratio,fundamentals_updated_at`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    const sbData = await sbRes.json();
+    const stored = sbData?.[0];
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-        'Referer': 'https://finance.yahoo.com',
-      }
+    if (stored && stored.fundamentals_updated_at) {
+      // Use stored data — map to common format
+      return res.status(200).json({
+        pe:                  stored.pe,
+        peg:                 stored.peg,
+        eps:                 stored.eps,
+        dividendYield:       stored.dividend_yield,
+        grossMargin:         stored.gross_margin,
+        operatingMargins:    stored.op_margin,
+        profitMargins:       stored.net_margin,
+        roic:                stored.roic,
+        debtToEquity:        stored.debt_equity != null ? stored.debt_equity * 100 : null,
+        longTermDebtToEquity:stored.lt_debt_equity != null ? stored.lt_debt_equity * 100 : null,
+        beta:                stored.beta,
+        marketCap:           stored.market_cap,
+        currentRatio:        stored.current_ratio,
+        _source: 'supabase',
+      });
+    }
+
+    // 2. Fallback: fetch live from Finnhub
+    const fhSymbol = toFinnhub(symbol);
+    const r = await fetch(
+      `https://finnhub.io/api/v1/stock/metric?symbol=${encodeURIComponent(fhSymbol)}&metric=all&token=${FINNHUB_KEY}`
+    );
+    const data = await r.json();
+    const m = data.metric || {};
+
+    return res.status(200).json({
+      pe:                  m.peTTM              ?? m.peNormalizedAnnual ?? null,
+      peg:                 m.pegNormalizedAnnual ?? null,
+      eps:                 m.epsTTM             ?? null,
+      dividendYield:       m.dividendYieldIndicatedAnnual ?? null,
+      grossMargin:         m.grossMarginAnnual  ?? null,
+      operatingMargins:    m.operatingMarginAnnual ?? null,
+      profitMargins:       m.netProfitMarginAnnual ?? null,
+      roic:                m.roiAnnual          ?? null,
+      debtToEquity:        m.totalDebt_totalEquityAnnual != null ? m.totalDebt_totalEquityAnnual * 100 : null,
+      longTermDebtToEquity:m.longTermDebt_equityAnnual != null ? m.longTermDebt_equityAnnual * 100 : null,
+      beta:                m.beta               ?? null,
+      currentRatio:        m.currentRatioAnnual ?? null,
+      _source: 'finnhub-live',
     });
-
-    if (!response.ok) throw new Error(`Yahoo Finance HTTP ${response.status}`);
-
-    const data = await response.json();
-    const result = data.quoteSummary?.result?.[0];
-
-    if (!result) throw new Error('No data returned for symbol');
-
-    const ks = result.keyStatistics        || {};
-    const fd = result.financialData        || {};
-    const sd = result.summaryDetail        || {};
-    const dk = result.defaultKeyStatistics || {};
-
-    // Helper: extract raw value from Yahoo Finance's {raw, fmt} objects
-    const raw = obj => (obj && obj.raw !== undefined) ? obj.raw : (typeof obj === 'number' ? obj : null);
-
-    // Long-term debt to equity:
-    // Yahoo Finance returns "debtToEquity" = total debt/equity in financialData.
-    // For long-term only: longTermDebt / (totalStockholdersEquity)
-    // We approximate from available fields or use longTermDebtToCapitalization from keyStatistics
-    const ltDebtToEq = (() => {
-      // Try longTermDebtToCapitalization from keyStatistics — not exactly Debt/Eq but closest
-      // More accurate: try from balance sheet. As fallback use same as debtToEquity
-      const ltdc = raw(dk.longTermDebtToCapitalization);
-      // Convert capitalization ratio to equity ratio: D/(E) = (D/C) / (1 - D/C)
-      if (ltdc != null && ltdc < 1) {
-        return (ltdc / (1 - ltdc)) * 100; // return in same scale as debtToEquity
-      }
-      return null;
-    })();
-
-    const out = {
-      // P/E (trailing)
-      pe:                  raw(sd.trailingPE)              ?? raw(ks.trailingPE),
-      // PEG ratio
-      peg:                 raw(ks.pegRatio),
-      // Total Debt / Equity (%) — divide by 100 on frontend
-      debtToEquity:        raw(fd.debtToEquity),
-      // Long-term Debt / Equity (%) — divide by 100 on frontend
-      longTermDebtToEquity: ltDebtToEq,
-      // EPS (trailing twelve months)
-      eps:                 raw(ks.trailingEps),
-      // Dividend Yield (decimal, e.g. 0.023 = 2.3%) — multiply by 100 on frontend
-      dividendYield:       raw(sd.dividendYield)           ?? raw(sd.trailingAnnualDividendYield),
-      // ROIC — Yahoo doesn't have it directly; use Return on Equity as proxy
-      roic:                raw(fd.returnOnEquity),
-      // Gross Margin (decimal, e.g. 0.43 = 43%) — multiply by 100 on frontend
-      grossMargin:         raw(fd.grossMargins),
-    };
-
-    return res.status(200).json(out);
 
   } catch (err) {
-    console.error(`Financials error for ${symbol}:`, err.message);
-    // Return nulls instead of error — table shows "—" gracefully
-    return res.status(200).json({
-      pe: null, peg: null, debtToEquity: null, longTermDebtToEquity: null,
-      eps: null, dividendYield: null, roic: null, grossMargin: null,
-      _error: err.message
-    });
+    return res.status(200).json({ pe:null,peg:null,eps:null,dividendYield:null,grossMargin:null,roic:null,debtToEquity:null,_error:err.message });
   }
+}
+
+function toFinnhub(ticker) {
+  if (ticker.endsWith('.DE'))  return 'XETRA:'   + ticker.replace('.DE', '');
+  if (ticker.endsWith('.L'))   return 'LSE:'     + ticker.replace('.L', '');
+  if (ticker.endsWith('.PA'))  return 'EURONEXT:'+ ticker.replace('.PA', '');
+  if (ticker.endsWith('.AS'))  return 'EURONEXT:'+ ticker.replace('.AS', '');
+  if (ticker.endsWith('.LS'))  return 'EURONEXT:'+ ticker.replace('.LS', '');
+  if (ticker.endsWith('.MC'))  return 'BME:'     + ticker.replace('.MC', '');
+  if (ticker.endsWith('.MI'))  return 'MIL:'     + ticker.replace('.MI', '');
+  if (ticker.endsWith('-USD')) return ticker;
+  return ticker;
 }
