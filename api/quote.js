@@ -1,4 +1,4 @@
-// api/quote.js — Finnhub live quotes com conversão automática para EUR
+// api/quote.js — Finnhub live quotes com conversão EUR via ECB (frankfurter.app)
 const FINNHUB_KEY = 'ct2affhr01qiurr3qhf0ct2affhr01qiurr3qhfg';
 
 export default async function handler(req, res) {
@@ -10,58 +10,56 @@ export default async function handler(req, res) {
 
   const tickers = symbols.split(',').map(s => s.trim()).filter(Boolean);
 
-  // Fetch EUR/USD rate first (1 USD = X EUR)
-  let eurUsd = 0.92; // fallback
+  // Fetch exchange rates from ECB via Frankfurter (free, no key, official rates)
+  // Returns: how many EUR per 1 unit of foreign currency
+  let rates = { USD: 0.92, GBP: 1.17 }; // sensible fallbacks
   try {
-    const fxRes = await fetch(
-      `https://finnhub.io/api/v1/forex/rates?base=USD&token=${FINNHUB_KEY}`
-    );
+    const fxRes = await fetch('https://api.frankfurter.app/latest?from=EUR&to=USD,GBP');
     const fxData = await fxRes.json();
-    if (fxData.quote?.EUR) eurUsd = fxData.quote.EUR;
-  } catch {}
+    // fxData.rates = { USD: 1.08, GBP: 0.85 } → EUR per USD = 1/1.08
+    if (fxData.rates?.USD) rates.USD = 1 / fxData.rates.USD; // EUR per 1 USD
+    if (fxData.rates?.GBP) rates.GBP = 1 / fxData.rates.GBP; // EUR per 1 GBP
+  } catch (e) {
+    console.error('FX fetch failed:', e.message);
+  }
 
   // Fetch all quotes in parallel
   const results = await Promise.allSettled(
     tickers.map(async (ticker) => {
       const fhSymbol = toFinnhub(ticker);
-      const isCrypto = ticker.endsWith('-USD') || ticker.endsWith('-EUR');
 
-      const url = isCrypto
-        ? `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(fhSymbol)}&token=${FINNHUB_KEY}`
-        : `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(fhSymbol)}&token=${FINNHUB_KEY}`;
-
-      const r = await fetch(url);
+      const r = await fetch(
+        `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(fhSymbol)}&token=${FINNHUB_KEY}`
+      );
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
       if (!data.c || data.c === 0) throw new Error('No price data');
 
-      // Determine if we need to convert to EUR
-      // European stocks (XETRA, EURONEXT, BME, MIL) are already in EUR
-      // US stocks, crypto quoted in USD need conversion
-      const isEuropean = fhSymbol.includes(':') && !fhSymbol.startsWith('BINANCE') && !fhSymbol.startsWith('KRAKEN');
-      const isGBp = fhSymbol.startsWith('LSE:'); // London stocks in GBp (pence)
-      const isAlreadyEur = isEuropean && !isGBp;
+      // Determine conversion factor to EUR
+      const isEuropean = fhSymbol.includes(':') &&
+        !fhSymbol.startsWith('BINANCE') && !fhSymbol.startsWith('KRAKEN');
+      const isGBp = fhSymbol.startsWith('LSE:'); // London prices in pence (GBp)
 
-      let fx = 1;
-      if (!isAlreadyEur) {
-        if (isGBp) fx = eurUsd / 100; // GBp → GBP → EUR
-        else        fx = eurUsd;       // USD → EUR
+      let fx;
+      if (isEuropean && !isGBp) {
+        fx = 1;              // Already EUR
+      } else if (isGBp) {
+        fx = rates.GBP / 100; // GBp → GBP → EUR
+      } else {
+        fx = rates.USD;      // USD → EUR
       }
-
-      const price  = data.c * fx;
-      const change = data.d * fx;
-      const changePct = data.dp; // % is the same regardless of currency
 
       return {
         symbol:                     ticker,
-        regularMarketPrice:         +price.toFixed(4),
-        regularMarketChange:        +change.toFixed(4),
-        regularMarketChangePercent: changePct,
-        regularMarketPreviousClose: +(data.pc * fx).toFixed(4),
-        regularMarketHigh:          +(data.h  * fx).toFixed(4),
-        regularMarketLow:           +(data.l  * fx).toFixed(4),
+        regularMarketPrice:         +( data.c  * fx).toFixed(4),
+        regularMarketChange:        +( data.d  * fx).toFixed(4),
+        regularMarketChangePercent: data.dp,   // % unchanged
+        regularMarketPreviousClose: +( data.pc * fx).toFixed(4),
+        regularMarketHigh:          +( data.h  * fx).toFixed(4),
+        regularMarketLow:           +( data.l  * fx).toFixed(4),
         currency: 'EUR',
-        _fxRate: fx,
+        _fx: fx,
+        _fhSymbol: fhSymbol,
       };
     })
   );
@@ -73,7 +71,6 @@ export default async function handler(req, res) {
   return res.status(200).json({ quoteResponse: { result } });
 }
 
-// Convert Yahoo Finance ticker → Finnhub symbol
 function toFinnhub(ticker) {
   if (ticker.endsWith('.DE'))  return 'XETRA:'   + ticker.replace('.DE', '');
   if (ticker.endsWith('.L'))   return 'LSE:'     + ticker.replace('.L', '');
@@ -84,6 +81,6 @@ function toFinnhub(ticker) {
   if (ticker.endsWith('.MI'))  return 'MIL:'     + ticker.replace('.MI', '');
   if (ticker === 'BTC-USD')    return 'BINANCE:BTCUSDT';
   if (ticker === 'ETH-USD')    return 'BINANCE:ETHUSDT';
-  if (ticker.endsWith('-USD')) return 'BINANCE:' + ticker.replace('-USD', '') + 'USDT';
-  return ticker; // US stocks: AAPL, MSFT, V, etc. — quoted in USD
+  if (ticker.endsWith('-USD')) return 'BINANCE:' + ticker.replace('-USD','') + 'USDT';
+  return ticker;
 }
