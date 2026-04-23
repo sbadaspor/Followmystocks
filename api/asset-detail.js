@@ -1,4 +1,8 @@
-// api/asset-detail.js — Dados fundamentais detalhados via Yahoo Finance
+// api/asset-detail.js — Dados detalhados via Finnhub
+const FINNHUB_KEY  = 'ct2affhr01qiurr3qhf0ct2affhr01qiurr3qhfg';
+const SUPABASE_URL = 'https://xzxnjifpgvshzlsxhags.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eG5qaWZwZ3ZzaHpsc3hoYWdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MDYzMjQsImV4cCI6MjA5MjQ4MjMyNH0.HlfyTZxvcPcPTR0yWCBUVU8vKm9ncaPVSqBW9LhJvE4';
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'public, max-age=1800');
@@ -6,181 +10,116 @@ export default async function handler(req, res) {
   const { symbol } = req.query;
   if (!symbol) return res.status(400).json({ error: 'symbol required' });
 
-  const h = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'application/json',
-    'Referer': 'https://finance.yahoo.com',
-  };
+  const fh = (path) =>
+    fetch(`https://finnhub.io/api/v1${path}&token=${FINNHUB_KEY}`).then(r => r.json());
+
+  const fhSymbol = toFinnhub(symbol);
 
   try {
-    const modules = [
-      'summaryProfile', 'summaryDetail', 'defaultKeyStatistics',
-      'financialData', 'incomeStatementHistory', 'balanceSheetHistory',
-      'cashflowStatementHistory', 'earnings'
-    ].join(',');
+    // 1. Get EUR/USD rate from ECB via Frankfurter (reliable, free, no key)
+    let eurUsd = 0.92;
+    try {
+      const fx = await fetch('https://api.frankfurter.app/latest?from=EUR&to=USD');
+      const fxData = await fx.json();
+      if (fxData.rates?.USD) eurUsd = 1 / fxData.rates.USD; // EUR per 1 USD
+    } catch {}
 
-    // Fetch summary + chart (for dividends) in parallel
-    const [summaryRes, chartRes] = await Promise.all([
-      fetch(`https://query1.finance.yahoo.com/v11/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=${modules}`, { headers: h }),
-      fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=10y&interval=3mo&events=div`, { headers: h }),
+    // Determine FX rate for this symbol
+    const isEuropean = fhSymbol.includes(':') && !fhSymbol.startsWith('BINANCE') && !fhSymbol.startsWith('KRAKEN');
+    const isGBp = fhSymbol.startsWith('LSE:');
+    const fxRate = isEuropean && !isGBp ? 1 : isGBp ? eurUsd / 100 : eurUsd;
+
+    // 2. Fetch profile, quote, metrics, financials in parallel
+    const [profile, quote, metrics, sbRes] = await Promise.all([
+      fh(`/stock/profile2?symbol=${encodeURIComponent(fhSymbol)}`),
+      fh(`/quote?symbol=${encodeURIComponent(fhSymbol)}`),
+      fh(`/stock/metric?symbol=${encodeURIComponent(fhSymbol)}&metric=all`),
+      fetch(`${SUPABASE_URL}/rest/v1/assets?ticker=eq.${encodeURIComponent(symbol)}&select=pe,peg,eps,dividend_yield,gross_margin,op_margin,net_margin,roic,debt_equity,lt_debt_equity,beta,market_cap,current_ratio,fundamentals_updated_at`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      }).then(r => r.json())
     ]);
 
-    if (!summaryRes.ok) throw new Error(`Summary HTTP ${summaryRes.status}`);
+    const m   = metrics.metric || {};
+    const sb  = sbRes?.[0] || {};
+    const mCap = (profile.marketCapitalization || 0) * 1e6 * fxRate;
 
-    const [summaryData, chartData] = await Promise.all([summaryRes.json(), chartRes.json()]);
-
-    const r = summaryData.quoteSummary?.result?.[0];
-    if (!r) throw new Error('No data returned for ' + symbol);
-
-    // Helper: extract raw number from Yahoo Finance {raw, fmt} objects
-    const raw = (obj) => {
-      if (obj == null) return null;
-      if (typeof obj === 'number') return obj;
-      if (typeof obj.raw === 'number') return obj.raw;
-      return null;
+    // 3. Build current metrics (prefer Supabase stored values, fallback to Finnhub live)
+    const currentMetrics = {
+      pe:              sb.pe              ?? m.peTTM              ?? m.peNormalizedAnnual ?? null,
+      eps:             sb.eps             ?? m.epsTTM             ?? null,
+      peg:             sb.peg             ?? m.pegNormalizedAnnual ?? null,
+      dividendYield:   sb.dividend_yield  ?? m.dividendYieldIndicatedAnnual ?? null,
+      grossMargin:     sb.gross_margin    ?? m.grossMarginAnnual  ?? null,
+      opMargin:        sb.op_margin       ?? m.operatingMarginAnnual ?? null,
+      netMargin:       sb.net_margin      ?? m.netProfitMarginAnnual ?? null,
+      roic:            sb.roic            ?? m.roiAnnual          ?? null,
+      debtToEquity:    sb.debt_equity     ?? m.totalDebt_totalEquityAnnual ?? null,
+      beta:            sb.beta            ?? m.beta               ?? null,
+      marketCap:       mCap || null,
+      currentRatio:    sb.current_ratio   ?? m.currentRatioAnnual ?? null,
+      freeCashflow:    m.freeCashFlowTTM  ? m.freeCashFlowTTM * fxRate : null,
+      ebitda:          m.ebitdaPerShareAnnual ? m.ebitdaPerShareAnnual * fxRate : null,
+      netDebtEbitda:   m.netDebt_ebitdaAnnual ?? null,
+      daysSalesReceivables: m.daysSalesOutstandingAnnual ?? null,
     };
 
-    // Currency conversion to EUR
-    const currency = r.summaryDetail?.currency || 'USD';
-    let fxRate = 1;
-    if (currency === 'USD' || currency === 'GBp') {
-      try {
-        const fxSym = currency === 'GBp' ? 'EURGBP=X' : 'EURUSD=X';
-        const fxRes = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${fxSym}?range=1d&interval=1d`, { headers: h });
-        const fxData = await fxRes.json();
-        const fxClose = fxData.chart?.result?.[0]?.indicators?.quote?.[0]?.close;
-        if (fxClose?.length) {
-          const rate = fxClose[fxClose.length - 1];
-          fxRate = currency === 'GBp' ? (rate / 100) : (1 / rate); // EUR per unit
-        }
-      } catch {}
-    }
+    // 4. Build annual data from Finnhub financials
+    const [incRes, cfRes, bsRes] = await Promise.all([
+      fh(`/stock/financials-reported?symbol=${encodeURIComponent(fhSymbol)}&freq=annual`),
+      fh(`/stock/financials-reported?symbol=${encodeURIComponent(fhSymbol)}&freq=annual`),
+      fh(`/stock/financials-reported?symbol=${encodeURIComponent(fhSymbol)}&freq=annual`),
+    ]);
 
-    const profile = r.summaryProfile || {};
-    const sd      = r.summaryDetail  || {};
-    const dks     = r.defaultKeyStatistics || {};
-    const fd      = r.financialData  || {};
-
-    // ── Annual statements (up to 4 years from Yahoo Finance) ────────────
-    const incStmts = r.incomeStatementHistory?.incomeStatementHistory || [];
-    const bsStmts  = r.balanceSheetHistory?.balanceSheetStatements   || [];
-    const cfStmts  = r.cashflowStatementHistory?.cashflowStatements  || [];
-
-    // EPS history from earnings chart
-    const earningsYearly = r.earnings?.financialsChart?.yearly || [];
-    const epsMap = {};
-    earningsYearly.forEach(e => { epsMap[e.date] = raw(e.earnings); });
-
-    const annual = incStmts.map((s, i) => {
-      const bs = bsStmts[i]  || {};
-      const cf = cfStmts[i]  || {};
-
-      const year    = s.endDate?.raw ? new Date(s.endDate.raw * 1000).getFullYear() : null;
-      const revenue = raw(s.totalRevenue);
-      const gross   = raw(s.grossProfit);
-      const opInc   = raw(s.operatingIncome) || raw(s.totalOperatingExpenses);
-      const netInc  = raw(s.netIncome) ?? raw(s.netIncomeApplicableToCommonShares);
-      const ebitda  = raw(s.ebitda);
-
-      const equity   = raw(bs.totalStockholderEquity);
-      const curAsset = raw(bs.totalCurrentAssets);
-      const curLiab  = raw(bs.totalCurrentLiabilities);
-      const ltDebt   = raw(bs.longTermDebt) ?? 0;
-      const totalLiab= raw(bs.totalLiab);
-      const recv     = raw(bs.netReceivables);
-
-      const opCF  = raw(cf.totalCashFromOperatingActivities);
-      const capex = Math.abs(raw(cf.capitalExpenditures) ?? 0);
-      const fcf   = opCF != null ? opCF - capex : raw(cf.freeCashFlow);
-
-      // Derived ratios
-      const grossMargin = revenue && gross   ? gross   / revenue : null;
-      const opMargin    = revenue && opInc   ? opInc   / revenue : null;
-      const netMargin   = revenue && netInc  ? netInc  / revenue : null;
-      const curRatio    = curLiab  ? (curAsset ?? 0) / curLiab  : null;
-      const totalCap    = equity != null ? equity + ltDebt : null;
-      const ltDC        = totalCap ? ltDebt / totalCap   : null;
-      const debtEq      = equity   ? (totalLiab ?? 0) / equity  : null;
-      const daysSales   = revenue && recv ? (recv / revenue) * 365 : null;
-      // ROIC ≈ NOPAT / Invested Capital (NOPAT ≈ opInc * 0.79)
-      const roic = opInc && equity ? (opInc * 0.79) / (equity + ltDebt) : null;
+    // Build annual from metrics historical data (simpler, more reliable from Finnhub)
+    const years = [0,1,2,3].map(i => {
+      const yr = new Date().getFullYear() - i;
+      const getSuffix = (base, yr2) => m[`${base}Annual`] ?? null;
 
       return {
-        year,
-        eps:         (epsMap[year] ?? null) != null ? (epsMap[year] * fxRate) : null,
-        revenue:     revenue  != null ? revenue  * fxRate : null,
-        grossProfit: gross    != null ? gross    * fxRate : null,
-        opIncome:    opInc    != null ? opInc    * fxRate : null,
-        netIncome:   netInc   != null ? netInc   * fxRate : null,
-        ebitda:      ebitda   != null ? ebitda   * fxRate : null,
-        fcf:         fcf      != null ? fcf      * fxRate : null,
-        grossMargin, opMargin, netMargin,
-        currentRatio: curRatio,
-        ltDebtCapital: ltDC,
-        debtEquity:   debtEq,
-        daysSales,
-        roic,
+        year:        yr,
+        eps:         m[`epsTTM`] && i === 0 ? m.epsTTM * fxRate : null,
+        revenue:     null, grossProfit: null, opIncome: null, netIncome: null,
+        ebitda:      null, fcf: null,
+        grossMargin: i === 0 ? (m.grossMarginTTM ?? m.grossMarginAnnual ?? null) : null,
+        opMargin:    i === 0 ? (m.operatingMarginTTM ?? m.operatingMarginAnnual ?? null) : null,
+        netMargin:   i === 0 ? (m.netProfitMarginTTM ?? m.netProfitMarginAnnual ?? null) : null,
+        roic:        i === 0 ? (m.roiAnnual ?? null) : null,
+        currentRatio:i === 0 ? (m.currentRatioAnnual ?? null) : null,
+        ltDebtCapital:i === 0 ? (m.longTermDebt_equityAnnual ?? null) : null,
+        debtEquity:  i === 0 ? (m.totalDebt_totalEquityAnnual ?? null) : null,
+        daysSales:   i === 0 ? (m.daysSalesOutstandingAnnual ?? null) : null,
       };
-    });
+    }).filter(a => Object.values(a).some(v => v !== null && v !== a.year));
 
-    // ── Current metrics ──────────────────────────────────────────────────
-    const netDebt   = (raw(fd.totalDebt) ?? 0) - (raw(fd.totalCash) ?? 0);
-    const ebitdaCur = raw(fd.ebitda);
-
-    const metrics = {
-      pe:                  raw(sd.trailingPE) ?? raw(dks.trailingPE),
-      eps:                 raw(dks.trailingEps) != null ? raw(dks.trailingEps) * fxRate : null,
-      netDebtEbitda:       ebitdaCur ? (netDebt * fxRate) / (ebitdaCur * fxRate) : null,
-      marketCap:           raw(sd.marketCap) != null ? raw(sd.marketCap) * fxRate : null,
-      beta:                raw(dks.beta),
-      dividendYield:       raw(sd.dividendYield) ?? raw(sd.trailingAnnualDividendYield),
-      roic:                raw(fd.returnOnEquity),   // ROE as ROIC proxy
-      currentRatio:        raw(fd.currentRatio),
-      freeCashflow:        raw(fd.freeCashflow) != null ? raw(fd.freeCashflow) * fxRate : null,
-      ebitda:              ebitdaCur != null ? ebitdaCur * fxRate : null,
-      debtToEquity:        raw(fd.debtToEquity),
-      grossMargin:         raw(fd.grossMargins),
-      opMargin:            raw(fd.operatingMargins),
-      netMargin:           raw(fd.profitMargins),
-      daysSalesReceivables: annual[0]?.daysSales ?? null,
-    };
-
-    // Net Debt / EBITDA
-    metrics.netDebtEbitda = (ebitdaCur && ebitdaCur !== 0)
-      ? netDebt / ebitdaCur
-      : null;
-
-    // ── Fiscal year end ──────────────────────────────────────────────────
-    let fiscalYearEnd = null;
-    if (incStmts[0]?.endDate?.fmt) {
-      const d = new Date(incStmts[0].endDate.raw * 1000);
-      fiscalYearEnd = d.toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' });
-    }
-
-    // ── Dividend history ─────────────────────────────────────────────────
-    const divEvents = chartData.chart?.result?.[0]?.events?.dividends || {};
-    const divByYear = {};
-    Object.values(divEvents).forEach(d => {
-      const yr = new Date(d.date * 1000).getFullYear();
-      divByYear[yr] = (divByYear[yr] || 0) + (d.amount * fxRate);
-    });
-    const dividends = Object.entries(divByYear)
-      .map(([y, amount]) => ({ year: +y, amount }))
-      .sort((a, b) => a.year - b.year);
+    // 5. Dividends from Finnhub
+    let dividends = [];
+    try {
+      const now = Math.floor(Date.now()/1000);
+      const from = now - 86400*365*10;
+      const divData = await fh(`/stock/dividend?symbol=${encodeURIComponent(fhSymbol)}&from=${toDate(from)}&to=${toDate(now)}`);
+      if (Array.isArray(divData)) {
+        const byYear = {};
+        divData.forEach(d => {
+          const yr = new Date(d.date).getFullYear();
+          byYear[yr] = (byYear[yr]||0) + (d.amount * fxRate);
+        });
+        dividends = Object.entries(byYear).map(([y,a]) => ({year:+y, amount:+a.toFixed(4)})).sort((a,b)=>a.year-b.year);
+      }
+    } catch {}
 
     return res.status(200).json({
-      currency,
+      currency: 'EUR',
       fxRate,
       info: {
-        sector:       profile.sector        || null,
-        industry:     profile.industry      || null,
-        country:      profile.country       || null,
-        fiscalYearEnd,
-        website:      profile.website       || null,
-        description:  profile.longBusinessSummary || null,
+        sector:       profile.finnhubIndustry || null,
+        industry:     profile.finnhubIndustry || null,
+        country:      profile.country         || null,
+        fiscalYearEnd:null,
+        website:      profile.weburl          || null,
+        description:  null,
       },
-      metrics,
-      annual,
+      metrics: currentMetrics,
+      annual:  years,
       dividends,
     });
 
@@ -188,4 +127,22 @@ export default async function handler(req, res) {
     console.error(`asset-detail error [${symbol}]:`, err.message);
     return res.status(500).json({ error: err.message });
   }
+}
+
+function toFinnhub(ticker) {
+  if (ticker.endsWith('.DE'))  return 'XETRA:'   + ticker.replace('.DE', '');
+  if (ticker.endsWith('.L'))   return 'LSE:'     + ticker.replace('.L', '');
+  if (ticker.endsWith('.PA'))  return 'EURONEXT:'+ ticker.replace('.PA', '');
+  if (ticker.endsWith('.AS'))  return 'EURONEXT:'+ ticker.replace('.AS', '');
+  if (ticker.endsWith('.LS'))  return 'EURONEXT:'+ ticker.replace('.LS', '');
+  if (ticker.endsWith('.MC'))  return 'BME:'     + ticker.replace('.MC', '');
+  if (ticker.endsWith('.MI'))  return 'MIL:'     + ticker.replace('.MI', '');
+  if (ticker === 'BTC-USD')    return 'BINANCE:BTCUSDT';
+  if (ticker === 'ETH-USD')    return 'BINANCE:ETHUSDT';
+  if (ticker.endsWith('-USD')) return 'BINANCE:' + ticker.replace('-USD','') + 'USDT';
+  return ticker;
+}
+
+function toDate(ts) {
+  return new Date(ts*1000).toISOString().slice(0,10);
 }
