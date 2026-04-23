@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>V — Visa Inc. · Follow Stocks</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #07070e;
+      --card:    #0c0c18;
+      --card2:   #0f0f1e;
+      --border:  rgba(255,255,255,0.065);
+      --border-h:rgba(255,255,255,0.12);
+      --text:    #e4e4f0;
+      --dim:     #8888a0;
+      --muted:   #44445a;
+      --green:   #0fe07a;
+      --red:     #ff3d58;
+      --blue:    #6ba3ff;
+      --amber:   #f5b731;
+      --teal:    #00d4aa;
+      --purple:  #a78bfa;
+      --accent:  #6153f5;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── TOPBAR ─────────────────────────────── */
+    .topbar {
+      height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+      background: rgba(7,7,14,.95);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(20px);
+    }
+
+    .back-btn {
+      display: flex; align-items: center; gap: 7px;
+      color: var(--dim); text-decoration: none;
+      font-size: 13px; font-weight: 500; transition: color .15s;
+    }
+    .back-btn:hover { color: var(--text); }
+
+    .topbar-tags { display: flex; gap: 6px; }
+
+    .tag {
+      font-size: 10px; font-weight: 600; padding: 3px 9px;
+      border-radius: 99px; border: 1px solid var(--border);
+      color: var(--dim); background: rgba(255,255,255,.03);
+      text-transform: uppercase; letter-spacing: .06em;
+    }
+    .tag.sector { color: var(--blue); border-color: rgba(107,163,255,.25); background: rgba(107,163,255,.07); }
+    .tag.country { color: var(--amber); border-color: rgba(245,183,49,.25); background: rgba(245,183,49,.07); }
+
+    /* ── MAIN ───────────────────────────────── */
+    main { max-width: 1240px; margin: 0 auto; padding: 32px 28px 100px; }
+
+    /* ── HERO ───────────────────────────────── */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      margin-bottom: 28px;
+      align-items: end;
+    }
+
+    .hero-ticker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; font-weight: 600;
+      color: var(--accent);
+      letter-spacing: .06em;
+      margin-bottom: 6px;
+    }
+
+    .hero-name {
+      font-size: 36px; font-weight: 600;
+      letter-spacing: -.025em;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #e4e4f0 0%, #8888a0 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 13px; color: var(--dim); line-height: 1.6;
+      max-width: 560px;
+    }
+
+    .hero-price-block { text-align: right; }
+
+    .live-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 42px; font-weight: 500;
+      letter-spacing: -.03em;
+      margin-bottom: 4px;
+    }
+
+    .live-change {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px; font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .live-change.pos { color: var(--green); }
+    .live-change.neg { color: var(--red); }
+
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .12em; color: var(--green);
+    }
+    .live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+    /* ── INTRINSIC VALUE BANNER ─────────────── */
+    .intrinsic-banner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .intr-card {
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .intr-card.base {
+      background: rgba(97,83,245,.08);
+      border: 1px solid rgba(97,83,245,.25);
+    }
+
+    .intr-card.disc {
+      background: rgba(15,224,122,.06);
+      border: 1px solid rgba(15,224,122,.2);
+    }
+
+    .intr-lbl {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--dim); margin-bottom: 4px;
+    }
+
+    .intr-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 26px; font-weight: 600;
+    }
+
+    .intr-vs {
+      font-size: 11px; color: var(--muted); margin-top: 2px;
+    }
+
+    .intr-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; font-weight: 600;
+      padding: 4px 10px; border-radius: 99px;
+    }
+    .intr-badge.above { background: rgba(255,61,88,.12); color: var(--red); }
+    .intr-badge.below { background: rgba(15,224,122,.12); color: var(--green); }
+
+    /* ── CARD ───────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 28px;
+      margin-bottom: 14px;
+    }
+
+    .card-hdr {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; margin-bottom: 20px;
+    }
+
+    .card-title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+    .card-sub   { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    /* ── KEY METRICS ────────────────────────── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .metric-cell {
+      background: var(--card);
+      padding: 16px 18px;
+    }
+
+    .metric-lbl {
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .09em;
+      color: var(--muted); margin-bottom: 8px;
+    }
+
+    .metric-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px; font-weight: 500;
+      letter-spacing: -.02em;
+    }
+
+    /* ── SUMMARY TABLE (averages) ───────────── */
+    .avg-table { width: 100%; border-collapse: collapse; }
+
+    .avg-table th {
+      font-size: 9.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .09em;
+      color: var(--muted); padding: 0 14px 14px 0;
+      text-align: right;
+    }
+    .avg-table th:first-child { text-align: left; padding-left: 0; }
+
+    .avg-table td {
+      padding: 11px 14px 11px 0;
+      border-top: 1px solid rgba(255,255,255,.04);
+      font-size: 13px; text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .avg-table td:first-child {
+      text-align: left; font-family: 'Outfit', sans-serif;
+      font-size: 13px; color: var(--dim); padding-left: 0;
+    }
+    .avg-table td.hi { color: var(--text); font-weight: 500; }
+
+    /* ── ANNUAL TABLE ───────────────────────── */
+    .annual-wrap { overflow-x: auto; }
+
+    .annual-table {
+      width: 100%; min-width: 900px;
+      border-collapse: collapse;
+    }
+
+    .annual-table th {
+      font-size: 9.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .09em;
+      color: var(--muted); padding: 0 10px 14px;
+      text-align: right; white-space: nowrap;
+    }
+    .annual-table th:first-child { text-align: left; padding-left: 0; min-width: 200px; }
+
+    .annual-table td {
+      padding: 9px 10px;
+      border-top: 1px solid rgba(255,255,255,.035);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px; text-align: right;
+      white-space: nowrap;
+    }
+    .annual-table td:first-child {
+      text-align: left;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px; color: var(--dim); padding-left: 0;
+    }
+
+    .annual-table tr.gr td {
+      padding-top: 1px; padding-bottom: 9px;
+      border-top: none; font-size: 10.5px;
+    }
+    .annual-table tr.gr td:first-child {
+      font-size: 11px; color: var(--muted);
+      padding-left: 12px;
+    }
+
+    .gu { color: var(--green) !important; }
+    .gd { color: var(--red) !important; }
+    .gn { color: var(--muted) !important; }
+
+    /* ── 2-COL CHARTS ───────────────────────── */
+    .charts-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .ch-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+    .ch-sub   { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+    .ch-wrap  { position: relative; height: 200px; }
+
+    .legend {
+      display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--dim);
+    }
+    .ld { width: 10px; height: 3px; border-radius: 2px; }
+
+    /* ── SEGMENT TABLE ──────────────────────── */
+    .seg-table { width: 100%; border-collapse: collapse; }
+    .seg-table th {
+      font-size: 9.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--muted); padding: 0 10px 14px;
+      text-align: right; white-space: nowrap;
+    }
+    .seg-table th:first-child { text-align: left; padding-left: 0; }
+    .seg-table td {
+      padding: 11px 10px;
+      border-top: 1px solid rgba(255,255,255,.04);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; text-align: right;
+    }
+    .seg-table td:first-child {
+      text-align: left; font-family: 'Outfit', sans-serif;
+      font-size: 13px; color: var(--dim); padding-left: 0;
+    }
+
+    .bar-cell { min-width: 120px; }
+    .bar-bg {
+      height: 5px; background: rgba(255,255,255,.07);
+      border-radius: 99px; overflow: hidden; margin-top: 4px;
+    }
+    .bar-fill {
+      height: 100%; border-radius: 99px;
+      background: var(--accent);
+    }
+
+    .pos { color: var(--green); }
+    .neg { color: var(--red); }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-price-block { text-align: left; }
+      .metrics-grid { grid-template-columns: repeat(3,1fr); }
+      .charts-2 { grid-template-columns: 1fr; }
+      .intrinsic-banner { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+    Voltar
+  </a>
+  <div class="topbar-tags">
+    <span class="tag sector">Financial Services</span>
+    <span class="tag country">USA · NYSE</span>
+    <span class="tag">Fiscal Year: Set</span>
+  </div>
+</div>
+
+<main>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div>
+      <div class="hero-ticker">V · VISA INC.</div>
+      <h1 class="hero-name">Visa Inc.</h1>
+      <p class="hero-desc">A Visa não é um banco nem emite cartões — é a "autoestrada" por onde a informação do dinheiro circula. Opera a maior rede global de pagamentos digitais, ligando consumidores, comerciantes, instituições financeiras e governos.</p>
+    </div>
+    <div class="hero-price-block">
+      <div class="live-price" id="live-price">— €</div>
+      <div class="live-change" id="live-change">—</div>
+      <div class="live-badge"><div class="live-dot"></div> EM TEMPO REAL</div>
+    </div>
+  </div>
+
+  <!-- INTRINSIC VALUE -->
+  <div class="intrinsic-banner">
+    <div class="intr-card base">
+      <div>
+        <div class="intr-lbl">Valor Intrínseco (base)</div>
+        <div class="intr-val" style="color:var(--accent)">286,53 €</div>
+        <div class="intr-vs">EPS TTM: 10.55 · fórmula Graham</div>
+      </div>
+      <div class="intr-badge above" id="badge-base">—</div>
+    </div>
+    <div class="intr-card disc">
+      <div>
+        <div class="intr-lbl">Valor Intrínseco (EPS Next Year)</div>
+        <div class="intr-val" style="color:var(--green)">394,90 €</div>
+        <div class="intr-vs">EPS Next Y: 14.54 · com desconto</div>
+      </div>
+      <div class="intr-badge below" id="badge-disc">—</div>
+    </div>
+  </div>
+
+  <!-- KEY METRICS -->
+  <div class="metrics-grid">
+    <div class="metric-cell">
+      <div class="metric-lbl">P/E TTM</div>
+      <div class="metric-val">29.96</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-lbl">EPS TTM</div>
+      <div class="metric-val">10.55 $</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-lbl">EPS Next Y</div>
+      <div class="metric-val" style="color:var(--green)">14.54 $</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-lbl">Net Debt/EBITDA</div>
+      <div class="metric-val">1.83</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-lbl">Market Cap</div>
+      <div class="metric-val">588 B</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-lbl">Beta</div>
+      <div class="metric-val">0.80</div>
+    </div>
+  </div>
+
+  <!-- DADOS GERAIS (averages) -->
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="card-title">Dados Gerais</div>
+        <div class="card-sub">Último ano vs. médias históricas</div>
+      </div>
+    </div>
+    <table class="avg-table">
+      <thead><tr>
+        <th></th>
+        <th>ÚLT. ANO</th>
+        <th>10 ANOS</th>
+        <th>5 ANOS</th>
+        <th>3 ANOS</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td>EPS</td>
+          <td class="hi">9.55 $</td>
+          <td>5.49 $</td>
+          <td>7.41 $</td>
+          <td>8.58 $</td>
+        </tr>
+        <tr>
+          <td>Receita Total</td>
+          <td class="hi">40.0 B $</td>
+          <td>26.1 B $</td>
+          <td>32.4 B $</td>
+          <td>36.2 B $</td>
+        </tr>
+        <tr>
+          <td>Receita Líquida</td>
+          <td class="hi">20.1 B $</td>
+          <td>13.0 B $</td>
+          <td>16.9 B $</td>
+          <td>19.0 B $</td>
+        </tr>
+        <tr>
+          <td>Free Cash Flow</td>
+          <td class="hi">21.6 B $</td>
+          <td>14.0 B $</td>
+          <td>18.5 B $</td>
+          <td>20.0 B $</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- RATIOS (averages) -->
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="card-title">Rácios e Margens</div>
+        <div class="card-sub">Último ano vs. médias históricas</div>
+      </div>
+    </div>
+    <table class="avg-table">
+      <thead><tr>
+        <th></th>
+        <th>ÚLT. ANO</th>
+        <th>10 ANOS</th>
+        <th>5 ANOS</th>
+        <th>3 ANOS</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Margem Bruta</td>      <td class="hi">100%</td>  <td>100%</td>    <td>100%</td>    <td>100%</td></tr>
+        <tr><td>Margem Operacional</td><td class="hi">59.99%</td><td>63.08%</td>  <td>63.95%</td>  <td>63.33%</td></tr>
+        <tr><td>Margem Líquida</td>    <td class="hi">50.15%</td><td>48.85%</td>  <td>52.02%</td>  <td>52.67%</td></tr>
+        <tr><td>ROIC</td>              <td class="hi">31.58%</td><td>22.69%</td>  <td>27.25%</td>  <td>29.62%</td></tr>
+        <tr><td>Current Ratio</td>     <td class="hi">1.08</td>  <td>1.58</td>    <td>1.40</td>    <td>1.27</td></tr>
+        <tr><td>Debt / Equity</td>     <td class="hi">0.664</td> <td>0.559</td>   <td>0.583</td>   <td>0.575</td></tr>
+        <tr><td>LT Debt / Capital</td> <td class="hi">0.341</td> <td>0.344</td>   <td>0.349</td>   <td>0.345</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CHARTS ROW 1: Revenue + EPS -->
+  <div class="charts-2">
+    <div class="card" style="margin-bottom:0">
+      <div class="ch-title">Receita Anual</div>
+      <div class="ch-sub">Últimos 14 anos · em mil milhões USD</div>
+      <div class="ch-wrap"><canvas id="rev-chart"></canvas></div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="ch-title">EPS Histórico</div>
+      <div class="ch-sub">Lucro por ação · USD</div>
+      <div class="ch-wrap"><canvas id="eps-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2: Margins + ROIC -->
+  <div class="charts-2">
+    <div class="card" style="margin-bottom:0">
+      <div class="ch-title">Margens ao Longo dos Anos</div>
+      <div class="ch-sub">Operacional e Líquida (%)</div>
+      <div class="ch-wrap"><canvas id="margins-chart"></canvas></div>
+      <div class="legend">
+        <div class="legend-item"><div class="ld" style="background:#6ba3ff"></div>Op. Margin</div>
+        <div class="legend-item"><div class="ld" style="background:#f5b731"></div>Net Margin</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="ch-title">ROIC ao Longo dos Anos</div>
+      <div class="ch-sub">Retorno sobre capital investido (%)</div>
+      <div class="ch-wrap"><canvas id="roic-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- DIVIDENDS -->
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="ch-title">Dividendos por Ano</div>
+        <div class="ch-sub">Pagamento por ação (USD) · crescimento consistente</div>
+      </div>
+    </div>
+    <div class="ch-wrap" style="height:180px"><canvas id="div-chart"></canvas></div>
+  </div>
+
+  <!-- FCF -->
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="ch-title">Free Cash Flow</div>
+        <div class="ch-sub">Últimos 14 anos · em mil milhões USD</div>
+      </div>
+    </div>
+    <div class="ch-wrap" style="height:180px"><canvas id="fcf-chart"></canvas></div>
+  </div>
+
+  <!-- ANNUAL DETAIL TABLE -->
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="card-title">Detalhes Anuais</div>
+        <div class="card-sub">Valores absolutos e crescimento YoY</div>
+      </div>
+    </div>
+    <div class="annual-wrap" id="annual-table-wrap"></div>
+  </div>
+
+  <!-- SEGMENT REVENUE -->
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="card-title">Receita por Segmento</div>
+        <div class="card-sub">2025 · em mil milhões USD</div>
+      </div>
+    </div>
+    <table class="seg-table">
+      <thead><tr>
+        <th>Segmento</th>
+        <th>Receita (B $)</th>
+        <th>% do Total</th>
+        <th class="bar-cell">Visual</th>
+        <th>YoY</th>
+      </tr></thead>
+      <tbody id="seg-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- ANNUAL RATIOS TABLE -->
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="card-title">Rácios Anuais</div>
+        <div class="card-sub">Evolução histórica de margens e rácios</div>
+      </div>
+    </div>
+    <div class="annual-wrap" id="ratios-table-wrap"></div>
+  </div>
+
+</main>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────
+const YEARS   = [2025,2024,2023,2022,2021,2020,2019,2018,2017,2016,2015,2014,2013,2012];
+const EPS     = [9.55,8.81,7.38,6.26,5.04,4.38,4.78,3.98,2.52,2.24,2.32,1.95,1.72,0.56];
+const EPS_GR  = [0.084,0.194,0.179,0.242,0.151,-0.084,0.201,0.579,0.125,-0.034,0.190,0.134,2.071,-0.371];
+const REV     = [40.0,35.926,32.653,29.31,24.105,21.846,22.977,20.609,18.358,15.082,13.88,12.702,11.778,10.421];
+const REV_GR  = [0.113,0.100,0.114,0.216,0.103,-0.049,0.115,0.123,0.217,0.087,0.093,0.078,0.130,0.134];
+const NET_INC = [20.058,19.743,17.273,14.957,12.311,10.866,12.08,10.301,6.699,5.991,6.328,5.438,4.98,2.144];
+const NET_GR  = [0.016,0.143,0.155,0.215,0.133,-0.100,0.173,0.538,0.118,-0.053,0.164,0.092,1.323,-0.413];
+const FCF     = [21.577,18.693,19.696,17.879,14.522,9.704,12.028,12.223,8.61,5.051,6.17,6.652,2.551,4.633];
+const FCF_GR  = [0.154,-0.051,0.102,0.231,0.496,-0.193,-0.016,0.420,0.705,-0.181,-0.072,1.608,-0.449,0.317];
+const EBITDA  = [25.214,24.629,21.943,19.674,16.608,14.848,15.657,13.556,12.7,8.385,9.558,10.724,9.957,4.627];
+const DIVS    = [2.44,2.15,1.87,1.575,1.335,1.22,1.05,0.88,0.69,0.585,0.5,0.42,0.3475,0.2475];
+const DIVS_GR = [0.135,0.150,0.187,0.180,0.094,0.162,0.193,0.275,0.179,0.170,0.190,0.209,0.404,0.478];
+const SHARES  = [2100,2242,2340,2391,2443,2479,2529,2586,2654,2678,2724,2894,2897,3865];
+
+const OP_M  = [0.5999,0.6568,0.6431,0.6419,0.6556,0.6446,0.6529,0.6286,0.6615,0.5227,0.653,0.606,0.6146,0.2053];
+const NET_M = [0.5015,0.5495,0.529,0.5103,0.5107,0.4974,0.5257,0.4998,0.3639,0.3972,0.4559,0.4281,0.4228,0.2057];
+const ROIC  = [0.3158,0.281,0.2917,0.2709,0.2033,0.2155,0.2124,0.2029,0.1353,0.1401,0.207,0.1839,0.1684,0.1915];
+const CUR_R = [1.0776,1.2834,1.4517,1.4485,1.7541,1.9052,1.5632,1.6113,1.9034,1.7789,1.8713,1.592,1.8044,1.4818];
+const LT_D  = [0.3408,0.3474,0.3457,0.3621,0.347,0.3679,0.3254,0.3284,0.3355,null,null,null,null,null];
+const DEBT_E= [0.664,0.5324,0.5283,0.631,0.5581,0.6647,0.4823,0.489,0.5607,0.4826,null,null,null,null];
+
+const SEGS = {
+  'Service Revenue':           { vals:[17.539,16.114,14.826,13.361,11.475,9.804,9.700], pct:0.3146, yoy:0.0884 },
+  'Data Processing':           { vals:[19.993,17.714,16.007,14.438,12.792,10.975,10.333], pct:0.3586, yoy:0.1287 },
+  'International Transaction': { vals:[14.166,12.665,11.638,9.815,6.530,6.299,7.804], pct:0.2541, yoy:0.1185 },
+  'Other':                     { vals:[4.053,3.197,2.479,1.991,1.675,1.432,1.313], pct:0.0727, yoy:0.2678 },
+  'Client Incentives':         { vals:[-15.751,-13.704,-12.297,-10.295,-8.367,-6.664,-6.173], pct:null, yoy:0.1494 },
+};
+
+const SUPABASE_URL = 'https://xzxnjifpgvshzlsxhags.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eG5qaWZwZ3ZzaHpsc3hoYWdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MDYzMjQsImV4cCI6MjA5MjQ4MjMyNH0.HlfyTZxvcPcPTR0yWCBUVU8vKm9ncaPVSqBW9LhJvE4';
+const FINNHUB_KEY  = 'ct2affhr01qiurr3qhf0ct2affhr01qiurr3qhfg';
+
+// ── Chart.js defaults ─────────────────────────────────────
+Chart.defaults.color       = '#8888a0';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+Chart.defaults.font.family = "'Outfit', sans-serif";
+Chart.defaults.font.size   = 11;
+
+// ── Helpers ───────────────────────────────────────────────
+const fmtB  = v => v == null ? '—' : v.toFixed(2) + ' B';
+const fmtPct= v => v == null ? '—' : (v >= 0 ? '+' : '') + (v*100).toFixed(1) + '%';
+const fmtN  = (v,d=2) => v == null ? '—' : v.toFixed(d);
+const fmtD  = v => v == null ? '—' : v.toFixed(2) + ' $';
+
+function grClass(v) {
+  if (v == null) return 'gn';
+  return v > 0 ? 'gu' : v < 0 ? 'gd' : 'gn';
+}
+
+// ── Live price ────────────────────────────────────────────
+async function fetchPrice() {
+  try {
+    const r = await fetch('/api/quote?symbols=V');
+    const d = await r.json();
+    const q = d.quoteResponse?.result?.[0];
+    if (!q) return;
+    const price = q.regularMarketPrice;
+    const chg   = q.regularMarketChangePercent;
+    const chgAbs= q.regularMarketChange;
+    const pos   = chg >= 0;
+
+    document.getElementById('live-price').textContent = price.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
+    const el = document.getElementById('live-change');
+    el.textContent = (pos?'▲ +':'▼ ') + Math.abs(chgAbs).toFixed(2) + ' € (' + (pos?'+':'') + chg.toFixed(2) + '%)';
+    el.className = 'live-change ' + (pos ? 'pos' : 'neg');
+
+    // Intrinsic vs market
+    const p = price;
+    const b1 = document.getElementById('badge-base');
+    const b2 = document.getElementById('badge-disc');
+    const diff1 = ((p - 286.53) / 286.53 * 100);
+    const diff2 = ((p - 394.90) / 394.90 * 100);
+    b1.textContent = (diff1 >= 0 ? '+' : '') + diff1.toFixed(1) + '% vs mercado';
+    b1.className   = 'intr-badge ' + (diff1 > 0 ? 'above' : 'below');
+    b2.textContent = (diff2 >= 0 ? '+' : '') + diff2.toFixed(1) + '% vs mercado';
+    b2.className   = 'intr-badge ' + (diff2 > 0 ? 'above' : 'below');
+  } catch {}
+}
+
+// ── Annual table ──────────────────────────────────────────
+function buildAnnualTable() {
+  const cols = YEARS.slice(0, 10);
+  const sections = [
+    { label:'EPS', data:EPS, gr:EPS_GR, fmt:fmtD },
+    { label:'Receita Total', data:REV, gr:REV_GR, fmt:v=>fmtB(v)+' $' },
+    { label:'Receita Líquida', data:NET_INC, gr:NET_GR, fmt:v=>fmtB(v)+' $' },
+    { label:'Free Cash Flow', data:FCF, gr:FCF_GR, fmt:v=>fmtB(v)+' $' },
+    { label:'EBITDA', data:EBITDA, gr:null, fmt:v=>fmtB(v)+' $' },
+    { label:'Dividendos / ação', data:DIVS, gr:DIVS_GR, fmt:fmtD },
+    { label:'Ações em circulação (M)', data:SHARES, gr:null, fmt:v=>v ? v.toFixed(0)+' M' : '—' },
+  ];
+
+  const hdrs = cols.map(y => '<th>' + y + '</th>').join('');
+  let html = '<table class="annual-table"><thead><tr><th>MÉTRICA</th>' + hdrs + '</tr></thead><tbody>';
+
+  sections.forEach(s => {
+    const vals = cols.map((_,i) => '<td>' + s.fmt(s.data[i]) + '</td>').join('');
+    html += '<tr><td>' + s.label + '</td>' + vals + '</tr>';
+    if (s.gr) {
+      const grs = cols.map((_,i) => {
+        if (i === cols.length-1) return '<td></td>';
+        const v = s.gr[i];
+        return '<td class="' + grClass(v) + '">' + fmtPct(v) + '</td>';
+      }).join('');
+      html += '<tr class="gr"><td>↳ crescimento</td>' + grs + '</tr>';
+    }
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('annual-table-wrap').innerHTML = html;
+}
+
+// ── Ratios table ──────────────────────────────────────────
+function buildRatiosTable() {
+  const cols = YEARS.slice(0, 10);
+  const sections = [
+    { label:'Margem Operacional', data:OP_M,  fmt:v=>v?'(v*100).toFixed(1)%':'—' },
+    { label:'Margem Líquida',     data:NET_M, fmt:v=>v?'(v*100).toFixed(1)%':'—' },
+    { label:'ROIC',               data:ROIC,  fmt:v=>v?(v*100).toFixed(1)+'%':'—' },
+    { label:'Current Ratio',      data:CUR_R, fmt:v=>v?v.toFixed(2):'—' },
+    { label:'LT Debt / Capital',  data:LT_D,  fmt:v=>v?v.toFixed(3):'—' },
+    { label:'Debt / Equity',      data:DEBT_E,fmt:v=>v?v.toFixed(3):'—' },
+  ];
+
+  const hdrs = cols.map(y => '<th>' + y + '</th>').join('');
+  let html = '<table class="annual-table"><thead><tr><th>RÁCIO</th>' + hdrs + '</tr></thead><tbody>';
+
+  sections.forEach(s => {
+    const vals = cols.map((_,i) => {
+      const v = s.data[i];
+      let txt;
+      if (s.label.includes('Margem') || s.label === 'ROIC') {
+        txt = v ? (v*100).toFixed(1)+'%' : '—';
+      } else {
+        txt = v ? v.toFixed(2) : '—';
+      }
+      return '<td>' + txt + '</td>';
+    }).join('');
+    html += '<tr><td>' + s.label + '</td>' + vals + '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('ratios-table-wrap').innerHTML = html;
+}
+
+// ── Segment table ─────────────────────────────────────────
+function buildSegTable() {
+  const total = 40.0;
+  const tbody = document.getElementById('seg-tbody');
+  let html = '';
+
+  Object.entries(SEGS).forEach(([name, seg]) => {
+    const val = seg.vals[0];
+    const pct = seg.pct;
+    const yoy = seg.yoy;
+    const barW = pct ? Math.round(pct * 100) : 0;
+    const isNeg = name === 'Client Incentives';
+
+    html += '<tr>';
+    html += '<td>' + name + '</td>';
+    html += '<td class="' + (isNeg?'neg':'') + '">' + (val>=0?'':'-') + Math.abs(val).toFixed(2) + ' B $</td>';
+    html += '<td>' + (pct ? (pct*100).toFixed(1)+'%' : '—') + '</td>';
+    html += '<td class="bar-cell">';
+    if (pct) {
+      html += '<div class="bar-bg"><div class="bar-fill" style="width:' + barW + '%"></div></div>';
+    }
+    html += '</td>';
+    html += '<td class="' + (yoy>=0?'pos':'neg') + '">' + (yoy>=0?'+':'') + (yoy*100).toFixed(1) + '%</td>';
+    html += '</tr>';
+  });
+
+  tbody.innerHTML = html;
+}
+
+// ── Chart helpers ─────────────────────────────────────────
+function baseOpts(suffix, decimals) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0f0f1e',
+        borderColor: 'rgba(255,255,255,.1)', borderWidth: 1,
+        bodyColor: '#e4e4f0',
+        bodyFont: { family: "'JetBrains Mono'", size: 11 },
+        callbacks: { label: c => ' ' + (c.parsed.y != null ? c.parsed.y.toFixed(decimals) + suffix : '—') }
+      }
+    },
+    scales: {
+      x: { grid:{display:false}, ticks:{color:'#44445a',font:{size:10}}, border:{display:false} },
+      y: { grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#44445a',font:{size:10},callback:v=>v.toFixed(decimals)+suffix}, border:{display:false} }
+    }
+  };
+}
+
+function gradient(ctx, color, h) {
+  const g = ctx.createLinearGradient(0,0,0,h||200);
+  g.addColorStop(0, color.replace(')',',0.25)').replace('rgb','rgba'));
+  g.addColorStop(1, color.replace(')',',0)').replace('rgb','rgba'));
+  return g;
+}
+
+// ── Build charts ──────────────────────────────────────────
+function buildCharts() {
+  const revYears = [...YEARS].reverse();
+  const revRev   = [...REV].reverse();
+  const revEps   = [...EPS].reverse();
+  const revFcf   = [...FCF].reverse();
+  const revDivs  = [...DIVS].reverse();
+  const revOpM   = [...OP_M].reverse();
+  const revNetM  = [...NET_M].reverse();
+  const revRoic  = [...ROIC].reverse();
+
+  // Revenue bar
+  const revCtx = document.getElementById('rev-chart').getContext('2d');
+  new Chart(revCtx, {
+    type: 'bar',
+    data: {
+      labels: revYears,
+      datasets: [{ data: revRev, backgroundColor: 'rgba(97,83,245,.65)', borderColor: '#6153f5', borderWidth: 1, borderRadius: 4 }]
+    },
+    options: baseOpts(' B$', 1)
+  });
+
+  // EPS line
+  const epsCtx = document.getElementById('eps-chart').getContext('2d');
+  new Chart(epsCtx, {
+    type: 'line',
+    data: {
+      labels: revYears,
+      datasets: [{
+        data: revEps,
+        borderColor: '#0fe07a', backgroundColor: 'rgba(15,224,122,.1)',
+        borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#0fe07a', fill: true, tension: 0.3
+      }]
+    },
+    options: baseOpts(' $', 2)
+  });
+
+  // Margins
+  const mCtx = document.getElementById('margins-chart').getContext('2d');
+  new Chart(mCtx, {
+    type: 'line',
+    data: {
+      labels: revYears,
+      datasets: [
+        { label:'Op. Margin', data: revOpM.map(v=>v*100), borderColor:'#6ba3ff', backgroundColor:'transparent', borderWidth:2, pointRadius:3, pointBackgroundColor:'#6ba3ff', tension:0.3 },
+        { label:'Net Margin', data: revNetM.map(v=>v*100), borderColor:'#f5b731', backgroundColor:'transparent', borderWidth:2, pointRadius:3, pointBackgroundColor:'#f5b731', tension:0.3 },
+      ]
+    },
+    options: {
+      ...baseOpts('%', 1),
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor:'#0f0f1e', borderColor:'rgba(255,255,255,.1)', borderWidth:1,
+          callbacks: { label: c => ' ' + c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '%' }
+        }
+      }
+    }
+  });
+
+  // ROIC
+  const roicCtx = document.getElementById('roic-chart').getContext('2d');
+  new Chart(roicCtx, {
+    type: 'line',
+    data: {
+      labels: revYears,
+      datasets: [{
+        data: revRoic.map(v=>v*100),
+        borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,.1)',
+        borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#00d4aa', fill: true, tension: 0.3
+      }]
+    },
+    options: baseOpts('%', 1)
+  });
+
+  // Dividends
+  const divCtx = document.getElementById('div-chart').getContext('2d');
+  new Chart(divCtx, {
+    type: 'bar',
+    data: {
+      labels: revYears,
+      datasets: [{ data: revDivs, backgroundColor: 'rgba(15,224,122,.65)', borderColor: '#0fe07a', borderWidth: 1, borderRadius: 4 }]
+    },
+    options: baseOpts(' $', 2)
+  });
+
+  // FCF
+  const fcfCtx = document.getElementById('fcf-chart').getContext('2d');
+  new Chart(fcfCtx, {
+    type: 'bar',
+    data: {
+      labels: revYears,
+      datasets: [{ data: revFcf, backgroundColor: 'rgba(107,163,255,.65)', borderColor: '#6ba3ff', borderWidth: 1, borderRadius: 4 }]
+    },
+    options: baseOpts(' B$', 1)
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────
+fetchPrice();
+setInterval(fetchPrice, 30000);
+buildCharts();
+buildAnnualTable();
+buildRatiosTable();
+buildSegTable();
+</script>
+</body>
+</html>
