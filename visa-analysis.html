@@ -378,20 +378,36 @@
   <div class="intrinsic-banner">
     <div class="intr-card base">
       <div>
-        <div class="intr-lbl">Valor Intrínseco (base)</div>
-        <div class="intr-val" style="color:var(--accent)">286,53 €</div>
-        <div class="intr-vs">EPS TTM: 10.55 · fórmula Graham</div>
+        <div class="intr-lbl">Valor Intrínseco (Graham) *</div>
+        <div class="intr-val" style="color:var(--accent)">272,71 $</div>
+        <div class="intr-vs">L=8.58 · g=10.92% · Y=4.2</div>
       </div>
       <div class="intr-badge above" id="badge-base">—</div>
     </div>
     <div class="intr-card disc">
       <div>
-        <div class="intr-lbl">Valor Intrínseco (EPS Next Year)</div>
-        <div class="intr-val" style="color:var(--green)">394,90 €</div>
-        <div class="intr-vs">EPS Next Y: 14.54 · com desconto</div>
+        <div class="intr-lbl">Com margem de segurança (−15%) *</div>
+        <div class="intr-val" style="color:var(--green)">231,80 $</div>
+        <div class="intr-vs">272,71 × 0,85</div>
       </div>
       <div class="intr-badge below" id="badge-disc">—</div>
     </div>
+  </div>
+
+  <!-- FORMULA FOOTNOTE -->
+  <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px;font-size:12px;color:var(--dim);line-height:1.8">
+    <span style="color:var(--text);font-weight:600">* Fórmula de Benjamin Graham:</span>
+    &nbsp;&nbsp;
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent)">V = L × (8,5 + 2g) × 4,4 / Y</span>
+    <br>
+    <span style="color:var(--muted)">
+      <b style="color:var(--dim)">L</b> = Média EPS últimos 3 anos = <b style="color:var(--text)">8,58 $</b> &nbsp;·&nbsp;
+      <b style="color:var(--dim)">g</b> = CAGR 3A receita = <b style="color:var(--text)">10,92%</b> &nbsp;·&nbsp;
+      <b style="color:var(--dim)">4,4</b> = constante de Graham &nbsp;·&nbsp;
+      <b style="color:var(--dim)">Y</b> = yield obrigações Tesouro EUA 20-30A = <b style="color:var(--text)">4,2%</b>
+      <br>
+      Margem de segurança de <b style="color:var(--text)">15%</b> aplicada ao valor base (× 0,85)
+    </span>
   </div>
 
   <!-- KEY METRICS -->
@@ -741,12 +757,13 @@ async function fetchPrice() {
     el.textContent = (pos?'▲ +':'▼ ') + Math.abs(chgAbs).toFixed(2) + ' € (' + (pos?'+':'') + chg.toFixed(2) + '%)';
     el.className = 'live-change ' + (pos ? 'pos' : 'neg');
 
-    // Intrinsic vs market
-    const p = price;
+    // Intrinsic vs market price
+    const INTRINSIC_BASE = 272.71;
+    const INTRINSIC_DISC = 231.80;
     const b1 = document.getElementById('badge-base');
     const b2 = document.getElementById('badge-disc');
-    const diff1 = ((p - 286.53) / 286.53 * 100);
-    const diff2 = ((p - 394.90) / 394.90 * 100);
+    const diff1 = ((price - INTRINSIC_BASE) / INTRINSIC_BASE * 100);
+    const diff2 = ((price - INTRINSIC_DISC) / INTRINSIC_DISC * 100);
     b1.textContent = (diff1 >= 0 ? '+' : '') + diff1.toFixed(1) + '% vs mercado';
     b1.className   = 'intr-badge ' + (diff1 > 0 ? 'above' : 'below');
     b2.textContent = (diff2 >= 0 ? '+' : '') + diff2.toFixed(1) + '% vs mercado';
