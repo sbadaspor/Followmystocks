@@ -765,12 +765,20 @@ function shiftYears(dir) {
 }
 
 function addYear() {
-  const newest = YEARS_LIST[0];
-  const newYear = newest + 1;
-  if (YEARS_LIST.includes(newYear)) return;
-  YEARS_LIST = [newYear, ...YEARS_LIST];
-  yearOffset = 0; // jump to newest
-  document.getElementById('hist-body').innerHTML = buildHistBody();
+  const yr = parseInt(prompt('Inserir ano (ex: 2010, 2026):'));
+  if (!yr || isNaN(yr) || yr < 1900 || yr > 2100) return;
+  if (YEARS_LIST.includes(yr)) { alert('O ano ' + yr + ' já existe.'); return; }
+  YEARS_LIST = [...YEARS_LIST, yr].sort((a,b)=>b-a);
+  // Jump to show the new year
+  yearOffset = Math.max(0, YEARS_LIST.indexOf(yr) - Math.floor(VISIBLE_YEARS/2));
+  yearOffset = Math.min(yearOffset, Math.max(0, YEARS_LIST.length - VISIBLE_YEARS));
+  renderHistorico();
+}
+
+function removeYear(year) {
+  if (!confirm('Remover o ano ' + year + ' da vista?\n\nNota: os dados guardados no Supabase não são apagados.')) return;
+  YEARS_LIST = YEARS_LIST.filter(y => y !== year);
+  yearOffset = Math.min(yearOffset, Math.max(0, YEARS_LIST.length - VISIBLE_YEARS));
   renderHistorico();
 }
 
@@ -843,7 +851,15 @@ function buildAnnualTable(fields, section) {
       <thead>
         <tr>
           <th style="width:${labelW}px;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--card2);border-bottom:2px solid var(--border);border-right:1px solid var(--border);position:sticky;left:0;z-index:2">M\xe9trica</th>
-          ${cols.map(y=>`<th style="width:${colW}px;padding:10px 8px;text-align:center;font-size:13px;font-weight:700;color:var(--text);background:var(--card2);border-bottom:2px solid var(--border);border-right:1px solid var(--border)">${y}</th>`).join('')}
+          ${cols.map(y=>`<th style="width:${colW}px;padding:8px 6px;text-align:center;font-size:13px;font-weight:700;color:var(--text);background:var(--card2);border-bottom:2px solid var(--border);border-right:1px solid var(--border);position:relative">
+            <div style="display:flex;align-items:center;justify-content:center;gap:4px">
+              ${y}
+              <button onclick="removeYear(${y})" title="Remover ano ${y}"
+                style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 2px;line-height:1;opacity:.5;transition:opacity .15s"
+                onmouseover="this.style.opacity='1';this.style.color='var(--red)'"
+                onmouseout="this.style.opacity='.5';this.style.color='var(--muted)'">&times;</button>
+            </div>
+          </th>`).join('')}
         </tr>
       </thead>
       <tbody>`;
