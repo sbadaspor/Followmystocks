@@ -10,21 +10,21 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:      #07070e;
-      --card:    #0c0c18;
-      --card2:   #0f0f1e;
-      --border:  rgba(255,255,255,0.065);
-      --border-h:rgba(255,255,255,0.12);
-      --text:    #e4e4f0;
-      --dim:     #8888a0;
-      --muted:   #44445a;
-      --green:   #0fe07a;
-      --red:     #ff3d58;
-      --blue:    #6ba3ff;
-      --amber:   #f5b731;
-      --teal:    #00d4aa;
-      --purple:  #a78bfa;
-      --accent:  #6153f5;
+      --bg:      #f5f5fa;
+      --card:    #ffffff;
+      --card2:   #f0f0f8;
+      --border:  rgba(0,0,0,0.09);
+      --border-h:rgba(0,0,0,0.16);
+      --text:    #0f0f1a;
+      --dim:     #55556a;
+      --muted:   #9999b0;
+      --green:   #0a9955;
+      --red:     #d92d48;
+      --blue:    #3b6fdd;
+      --amber:   #c47e00;
+      --teal:    #007d66;
+      --purple:  #7c5fcf;
+      --accent:  #5344e8;
     }
 
     body {
@@ -40,7 +40,7 @@
       height: 52px;
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 28px;
-      background: rgba(7,7,14,.95);
+      background: rgba(255,255,255,.98);
       border-bottom: 1px solid var(--border);
       position: sticky; top: 0; z-index: 100;
       backdrop-filter: blur(20px);
@@ -58,7 +58,7 @@
     .tag {
       font-size: 10px; font-weight: 600; padding: 3px 9px;
       border-radius: 99px; border: 1px solid var(--border);
-      color: var(--dim); background: rgba(255,255,255,.03);
+      color: var(--dim); background: rgba(0,0,0,.03);
       text-transform: uppercase; letter-spacing: .06em;
     }
     .tag.sector { color: var(--blue); border-color: rgba(107,163,255,.25); background: rgba(107,163,255,.07); }
@@ -139,13 +139,13 @@
     }
 
     .intr-card.base {
-      background: rgba(97,83,245,.08);
-      border: 1px solid rgba(97,83,245,.25);
+      background: rgba(97,83,245,.06);
+      border: 1px solid rgba(97,83,245,.20);
     }
 
     .intr-card.disc {
-      background: rgba(15,224,122,.06);
-      border: 1px solid rgba(15,224,122,.2);
+      background: rgba(10,153,85,.05);
+      border: 1px solid rgba(10,153,85,.18);
     }
 
     .intr-lbl {
@@ -229,7 +229,7 @@
 
     .avg-table td {
       padding: 11px 14px 11px 0;
-      border-top: 1px solid rgba(255,255,255,.04);
+      border-top: 1px solid rgba(0,0,0,.07);
       font-size: 13px; text-align: right;
       font-family: 'JetBrains Mono', monospace;
     }
@@ -257,7 +257,7 @@
 
     .annual-table td {
       padding: 9px 10px;
-      border-top: 1px solid rgba(255,255,255,.035);
+      border-top: 1px solid rgba(0,0,0,.07);
       font-family: 'JetBrains Mono', monospace;
       font-size: 11.5px; text-align: right;
       white-space: nowrap;
@@ -313,7 +313,7 @@
     .seg-table th:first-child { text-align: left; padding-left: 0; }
     .seg-table td {
       padding: 11px 10px;
-      border-top: 1px solid rgba(255,255,255,.04);
+      border-top: 1px solid rgba(0,0,0,.07);
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px; text-align: right;
     }
@@ -324,7 +324,7 @@
 
     .bar-cell { min-width: 120px; }
     .bar-bg {
-      height: 5px; background: rgba(255,255,255,.07);
+      height: 5px; background: rgba(0,0,0,.05);
       border-radius: 99px; overflow: hidden; margin-top: 4px;
     }
     .bar-fill {
@@ -395,7 +395,7 @@
   </div>
 
   <!-- FORMULA FOOTNOTE -->
-  <div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px;font-size:12px;color:var(--dim);line-height:1.8">
+  <div style="background:rgba(0,0,0,.02);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px;font-size:12px;color:var(--dim);line-height:1.8">
     <span style="color:var(--text);font-weight:600">* Fórmula de Benjamin Graham:</span>
     &nbsp;&nbsp;
     <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent)">V = L × (8,5 + 2g) × 4,4 / Y</span>
@@ -414,11 +414,11 @@
   <div class="metrics-grid">
     <div class="metric-cell">
       <div class="metric-lbl">P/E TTM</div>
-      <div class="metric-val">29.96</div>
+      <div class="metric-val" id="kpi-pe">—</div>
     </div>
     <div class="metric-cell">
       <div class="metric-lbl">EPS TTM</div>
-      <div class="metric-val">10.55 $</div>
+      <div class="metric-val" id="kpi-eps">—</div>
     </div>
     <div class="metric-cell">
       <div class="metric-lbl">EPS Next Y</div>
@@ -430,11 +430,11 @@
     </div>
     <div class="metric-cell">
       <div class="metric-lbl">Market Cap</div>
-      <div class="metric-val">588 B</div>
+      <div class="metric-val" id="kpi-mcap">—</div>
     </div>
     <div class="metric-cell">
       <div class="metric-lbl">Beta</div>
-      <div class="metric-val">0.80</div>
+      <div class="metric-val" id="kpi-beta">—</div>
     </div>
   </div>
 
@@ -497,7 +497,7 @@
         <th>MÉD. 10A</th>
         <th>MÉD. 5A</th>
         <th>MÉD. 3A</th>
-        <th style="border-left:1px solid rgba(255,255,255,.07);padding-left:16px">YoY</th>
+        <th style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">YoY</th>
         <th>CAGR 10A</th>
         <th>CAGR 5A</th>
         <th>CAGR 3A</th>
@@ -509,7 +509,7 @@
           <td>5.49 $</td>
           <td>7.41 $</td>
           <td>8.58 $</td>
-          <td class="pos" style="border-left:1px solid rgba(255,255,255,.07);padding-left:16px">+8.40%</td>
+          <td class="pos" style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">+8.40%</td>
           <td class="pos">+15.20%</td>
           <td class="pos">+16.87%</td>
           <td class="pos">+15.12%</td>
@@ -520,7 +520,7 @@
           <td>26.1 B $</td>
           <td>32.4 B $</td>
           <td>36.2 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(255,255,255,.07);padding-left:16px">+11.34%</td>
+          <td class="pos" style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">+11.34%</td>
           <td class="pos">+11.16%</td>
           <td class="pos">+12.86%</td>
           <td class="pos">+10.92%</td>
@@ -531,7 +531,7 @@
           <td>26.1 B $</td>
           <td>32.4 B $</td>
           <td>36.2 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(255,255,255,.07);padding-left:16px">+11.34%</td>
+          <td class="pos" style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">+11.34%</td>
           <td class="pos">+11.16%</td>
           <td class="pos">+12.86%</td>
           <td class="pos">+10.92%</td>
@@ -542,7 +542,7 @@
           <td>13.0 B $</td>
           <td>16.9 B $</td>
           <td>19.0 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(255,255,255,.07);padding-left:16px">+11.34%</td>
+          <td class="pos" style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">+11.34%</td>
           <td class="pos">+10.22%</td>
           <td class="pos">+13.04%</td>
           <td class="pos">+10.28%</td>
@@ -553,7 +553,7 @@
           <td>14.0 B $</td>
           <td>18.5 B $</td>
           <td>20.0 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(255,255,255,.07);padding-left:16px">+15.43%</td>
+          <td class="pos" style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">+15.43%</td>
           <td class="pos">+13.34%</td>
           <td class="pos">+17.33%</td>
           <td class="pos">+6.47%</td>
@@ -724,8 +724,8 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const FINNHUB_KEY  = 'ct2affhr01qiurr3qhf0ct2affhr01qiurr3qhfg';
 
 // ── Chart.js defaults ─────────────────────────────────────
-Chart.defaults.color       = '#8888a0';
-Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+Chart.defaults.color       = '#55556a';
+Chart.defaults.borderColor = 'rgba(0,0,0,.08)';
 Chart.defaults.font.family = "'Outfit', sans-serif";
 Chart.defaults.font.size   = 11;
 
@@ -768,6 +768,33 @@ async function fetchPrice() {
     b1.className   = 'intr-badge ' + (diff1 > 0 ? 'above' : 'below');
     b2.textContent = (diff2 >= 0 ? '+' : '') + diff2.toFixed(1) + '% vs mercado';
     b2.className   = 'intr-badge ' + (diff2 > 0 ? 'above' : 'below');
+  } catch {}
+}
+
+// ── Live fundamentals from Finnhub ────────────────────────
+async function fetchMetrics() {
+  try {
+    const r = await fetch('https://finnhub.io/api/v1/stock/metric?symbol=V&metric=all&token=' + FINNHUB_KEY);
+    const d = await r.json();
+    const m = d.metric || {};
+
+    const pe   = m.peTTM ?? m.peNormalizedAnnual;
+    const eps  = m.epsTTM;
+    const beta = m.beta;
+
+    if (pe   != null) document.getElementById('kpi-pe').textContent   = pe.toFixed(2);
+    if (eps  != null) document.getElementById('kpi-eps').textContent  = eps.toFixed(2) + ' $';
+    if (beta != null) document.getElementById('kpi-beta').textContent = beta.toFixed(2);
+  } catch {}
+
+  // Market cap from profile (more accurate)
+  try {
+    const r2 = await fetch('https://finnhub.io/api/v1/stock/profile2?symbol=V&token=' + FINNHUB_KEY);
+    const p  = await r2.json();
+    if (p.marketCapitalization) {
+      const mcap = p.marketCapitalization / 1000; // convert M → B
+      document.getElementById('kpi-mcap').textContent = mcap.toFixed(1) + ' B $';
+    }
   } catch {}
 }
 
@@ -873,16 +900,16 @@ function baseOpts(suffix, decimals) {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#0f0f1e',
-        borderColor: 'rgba(255,255,255,.1)', borderWidth: 1,
+        backgroundColor: '#ffffff',
+        borderColor: 'rgba(0,0,0,.12)', borderWidth: 1,
         bodyColor: '#e4e4f0',
         bodyFont: { family: "'JetBrains Mono'", size: 11 },
         callbacks: { label: c => ' ' + (c.parsed.y != null ? c.parsed.y.toFixed(decimals) + suffix : '—') }
       }
     },
     scales: {
-      x: { grid:{display:false}, ticks:{color:'#44445a',font:{size:10}}, border:{display:false} },
-      y: { grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#44445a',font:{size:10},callback:v=>v.toFixed(decimals)+suffix}, border:{display:false} }
+      x: { grid:{display:false}, ticks:{color:'#777790',font:{size:10}}, border:{display:false} },
+      y: { grid:{color:'rgba(0,0,0,.07)'}, ticks:{color:'#777790',font:{size:10},callback:v=>v.toFixed(decimals)+suffix}, border:{display:false} }
     }
   };
 }
@@ -911,7 +938,7 @@ function buildCharts() {
     type: 'bar',
     data: {
       labels: revYears,
-      datasets: [{ data: revRev, backgroundColor: 'rgba(97,83,245,.65)', borderColor: '#6153f5', borderWidth: 1, borderRadius: 4 }]
+      datasets: [{ data: revRev, backgroundColor: 'rgba(83,68,232,.75)', borderColor: '#6153f5', borderWidth: 1, borderRadius: 4 }]
     },
     options: baseOpts(' B$', 1)
   });
@@ -924,7 +951,7 @@ function buildCharts() {
       labels: revYears,
       datasets: [{
         data: revEps,
-        borderColor: '#0fe07a', backgroundColor: 'rgba(15,224,122,.1)',
+        borderColor: '#0fe07a', backgroundColor: 'rgba(10,153,85,.08)',
         borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#0fe07a', fill: true, tension: 0.3
       }]
     },
@@ -947,7 +974,7 @@ function buildCharts() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor:'#0f0f1e', borderColor:'rgba(255,255,255,.1)', borderWidth:1,
+          backgroundColor:'#ffffff', borderColor:'rgba(0,0,0,.12)', borderWidth:1,
           callbacks: { label: c => ' ' + c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '%' }
         }
       }
@@ -962,7 +989,7 @@ function buildCharts() {
       labels: revYears,
       datasets: [{
         data: revRoic.map(v=>v*100),
-        borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,.1)',
+        borderColor: '#00d4aa', backgroundColor: 'rgba(0,125,102,.1)',
         borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#00d4aa', fill: true, tension: 0.3
       }]
     },
@@ -975,7 +1002,7 @@ function buildCharts() {
     type: 'bar',
     data: {
       labels: revYears,
-      datasets: [{ data: revDivs, backgroundColor: 'rgba(15,224,122,.65)', borderColor: '#0fe07a', borderWidth: 1, borderRadius: 4 }]
+      datasets: [{ data: revDivs, backgroundColor: 'rgba(10,153,85,.75)', borderColor: '#0fe07a', borderWidth: 1, borderRadius: 4 }]
     },
     options: baseOpts(' $', 2)
   });
@@ -986,7 +1013,7 @@ function buildCharts() {
     type: 'bar',
     data: {
       labels: revYears,
-      datasets: [{ data: revFcf, backgroundColor: 'rgba(107,163,255,.65)', borderColor: '#6ba3ff', borderWidth: 1, borderRadius: 4 }]
+      datasets: [{ data: revFcf, backgroundColor: 'rgba(59,111,221,.75)', borderColor: '#6ba3ff', borderWidth: 1, borderRadius: 4 }]
     },
     options: baseOpts(' B$', 1)
   });
@@ -994,6 +1021,7 @@ function buildCharts() {
 
 // ── Init ──────────────────────────────────────────────────
 fetchPrice();
+fetchMetrics();
 setInterval(fetchPrice, 30000);
 buildCharts();
 buildAnnualTable();
