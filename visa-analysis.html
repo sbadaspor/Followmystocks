@@ -378,6 +378,63 @@
       .page-layout { grid-template-columns: 1fr; }
       .side-nav { display: none; }
     }
+
+    /* ── EXPANDABLE METRIC ROWS ────────────── */
+    .metric-row { cursor: pointer; transition: background .12s; }
+    .metric-row:hover { background: rgba(83,68,232,.04) !important; }
+    .metric-row td:first-child { position: relative; }
+    .expand-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 4px;
+      background: rgba(83,68,232,.1); color: var(--accent);
+      font-size: 9px; margin-right: 7px; transition: transform .2s, background .15s;
+      flex-shrink: 0; vertical-align: middle;
+    }
+    .metric-row.expanded .expand-icon { transform: rotate(90deg); background: rgba(83,68,232,.2); }
+    .history-row td { padding: 0 !important; border-bottom: 2px solid rgba(83,68,232,.3) !important; }
+    .history-inner {
+      background: rgba(83,68,232,.025); border-top: 1px solid rgba(83,68,232,.1);
+      overflow-x: auto; padding: 0;
+    }
+    .history-inner table { min-width: 500px; border-collapse: collapse; width: 100%; }
+    .history-inner th {
+      padding: 9px 12px; font-size: 9.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+      text-align: right; white-space: nowrap;
+      background: rgba(83,68,232,.05); border-bottom: 1px solid var(--border);
+    }
+    .history-inner th:first-child { text-align: left; }
+    .history-inner td {
+      padding: 9px 12px; text-align: right;
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      border-bottom: 1px solid rgba(0,0,0,.04);
+      color: var(--text);
+    }
+    .history-inner td:first-child { text-align: left; font-weight: 700; min-width: 60px; }
+    .history-inner tr:last-child td { border-bottom: none; }
+
+    /* ── SEGMENT TOOLTIPS ───────────────────── */
+    .seg-tooltip-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: default; }
+    .seg-info-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 15px; height: 15px; border-radius: 50%;
+      background: rgba(83,68,232,.12); border: none; cursor: help;
+      font-size: 8px; font-weight: 800; color: var(--accent); flex-shrink: 0;
+    }
+    .seg-tooltip {
+      visibility: hidden; opacity: 0; pointer-events: none;
+      position: absolute; left: 0; top: calc(100% + 8px);
+      background: #1e1b4b; color: #e0e7ff;
+      font-size: 12px; line-height: 1.65; font-family: 'Outfit', sans-serif; font-weight: 400;
+      padding: 12px 16px; border-radius: 10px; width: 300px; z-index: 200;
+      box-shadow: 0 8px 28px rgba(0,0,0,.25);
+      transition: opacity .18s, visibility .18s;
+    }
+    .seg-tooltip::before {
+      content: ''; position: absolute; bottom: 100%; left: 14px;
+      border: 5px solid transparent; border-bottom-color: #1e1b4b;
+    }
+    .seg-tooltip-wrap:hover .seg-tooltip { visibility: visible; opacity: 1; }
   </style>
 </head>
 <body>
@@ -503,114 +560,26 @@
   <div id="dados-gerais"></div>
   <!-- DADOS GERAIS -->
   <div class="card">
+  <div id="dados-gerais"></div>
+  <div class="card">
     <div class="card-hdr">
       <div>
         <div class="card-title">Dados Gerais</div>
-        <div class="card-sub">Último ano · médias históricas · crescimento YoY e CAGR</div>
+        <div class="card-sub">Clica em qualquer métrica para ver o histórico completo · Dados do Supabase</div>
       </div>
     </div>
-    <table class="avg-table">
-      <thead><tr>
-        <th></th>
-        <th>ÚLT. ANO</th>
-        <th>MÉD. 3A</th>
-        <th>MÉD. 5A</th>
-        <th>MÉD. 10A</th>
-        <th style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">YoY</th>
-        <th>CAGR 3A</th>
-        <th>CAGR 5A</th>
-        <th>CAGR 10A</th>
-      </tr></thead>
-      <tbody>
-        <tr>
-          <td>EPS</td>
-          <td class="hi">9.55 $</td>
-          <td>8.58 $</td>
-          <td>7.41 $</td>
-          <td>5.49 $</td>
-          <td class="pos" style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">+8.40%</td>
-          <td class="pos">+15.12%</td>
-          <td class="pos">+16.87%</td>
-          <td class="pos">+15.20%</td>
-        </tr>
-        <tr>
-          <td>Receita Total</td>
-          <td class="hi">40.0 B $</td>
-          <td>36.2 B $</td>
-          <td>32.4 B $</td>
-          <td>26.1 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">+11.34%</td>
-          <td class="pos">+10.92%</td>
-          <td class="pos">+12.86%</td>
-          <td class="pos">+11.16%</td>
-        </tr>
-        <tr>
-          <td>Receita Bruta</td>
-          <td class="hi">40.0 B $</td>
-          <td>36.2 B $</td>
-          <td>32.4 B $</td>
-          <td>26.1 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">+11.34%</td>
-          <td class="pos">+10.92%</td>
-          <td class="pos">+12.86%</td>
-          <td class="pos">+11.16%</td>
-        </tr>
-        <tr>
-          <td>Receita Líquida</td>
-          <td class="hi">20.1 B $</td>
-          <td>19.0 B $</td>
-          <td>16.9 B $</td>
-          <td>13.0 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">+11.34%</td>
-          <td class="pos">+10.28%</td>
-          <td class="pos">+13.04%</td>
-          <td class="pos">+10.22%</td>
-        </tr>
-        <tr>
-          <td>Free Cash Flow</td>
-          <td class="hi">21.6 B $</td>
-          <td>20.0 B $</td>
-          <td>18.5 B $</td>
-          <td>14.0 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">+15.43%</td>
-          <td class="pos">+6.47%</td>
-          <td class="pos">+17.33%</td>
-          <td class="pos">+13.34%</td>
-        </tr>
-      </tbody>
-    </table>
+    <div id="dados-gerais-wrap"><div style="color:var(--muted);font-size:13px;padding:16px 0">A carregar...</div></div>
   </div>
-
   <div id="racios"></div>
-  <!-- RATIOS (averages) -->
   <div class="card">
     <div class="card-hdr">
       <div>
         <div class="card-title">Rácios e Margens</div>
-        <div class="card-sub">Último ano vs. médias históricas</div>
+        <div class="card-sub">Clica em qualquer rácio para ver o histórico completo</div>
       </div>
     </div>
-    <table class="avg-table">
-      <thead><tr>
-        <th></th>
-        <th>ÚLT. ANO</th>
-        <th>10 ANOS</th>
-        <th>5 ANOS</th>
-        <th>3 ANOS</th>
-      </tr></thead>
-      <tbody>
-        <tr><td>Margem Bruta</td>      <td class="hi">100%</td>  <td>100%</td>    <td>100%</td>    <td>100%</td></tr>
-        <tr><td>Margem Operacional</td><td class="hi">59.99%</td><td>63.08%</td>  <td>63.95%</td>  <td>63.33%</td></tr>
-        <tr><td>Margem Líquida</td>    <td class="hi">50.15%</td><td>48.85%</td>  <td>52.02%</td>  <td>52.67%</td></tr>
-        <tr><td>ROIC</td>              <td class="hi">31.58%</td><td>22.69%</td>  <td>27.25%</td>  <td>29.62%</td></tr>
-        <tr><td>Current Ratio</td>     <td class="hi">1.08</td>  <td>1.58</td>    <td>1.40</td>    <td>1.27</td></tr>
-        <tr><td>Debt / Equity</td>     <td class="hi">0.664</td> <td>0.559</td>   <td>0.583</td>   <td>0.575</td></tr>
-        <tr><td>LT Debt / Capital</td> <td class="hi">0.341</td> <td>0.344</td>   <td>0.349</td>   <td>0.345</td></tr>
-      </tbody>
-    </table>
+    <div id="racios-wrap"><div style="color:var(--muted);font-size:13px;padding:16px 0">A carregar...</div></div>
   </div>
-
-  <div id="charts-rev"></div>
   <!-- CHARTS ROW 1: Revenue + EPS -->
   <div class="charts-2">
     <div class="card" style="margin-bottom:0">
@@ -668,25 +637,14 @@
     <div class="ch-wrap" style="height:180px"><canvas id="fcf-chart"></canvas></div>
   </div>
 
-  <div id="annual"></div>
-  <!-- ANNUAL DETAIL TABLE -->
-  <div class="card">
-    <div class="card-hdr">
-      <div>
-        <div class="card-title">Detalhes Anuais</div>
-        <div class="card-sub">Valores absolutos e crescimento YoY</div>
-      </div>
-    </div>
-    <div class="annual-wrap" id="annual-table-wrap"></div>
-  </div>
-
   <div id="segments"></div>
   <!-- SEGMENT REVENUE -->
+  <div id="segments"></div>
   <div class="card">
     <div class="card-hdr">
       <div>
         <div class="card-title">Receita por Segmento</div>
-        <div class="card-sub">2025 · em mil milhões USD</div>
+        <div class="card-sub">Clica em qualquer segmento para ver histórico · ★ para descrição</div>
       </div>
     </div>
     <table class="seg-table">
@@ -699,18 +657,6 @@
       </tr></thead>
       <tbody id="seg-tbody"></tbody>
     </table>
-  </div>
-
-  <div id="ratios-annual"></div>
-  <!-- ANNUAL RATIOS TABLE -->
-  <div class="card">
-    <div class="card-hdr">
-      <div>
-        <div class="card-title">Rácios Anuais</div>
-        <div class="card-sub">Evolução histórica de margens e rácios</div>
-      </div>
-    </div>
-    <div class="annual-wrap" id="ratios-table-wrap"></div>
   </div>
 
   </div>
@@ -1049,14 +995,308 @@ function buildCharts() {
   });
 }
 
+// ── Supabase historical data ───────────────────────────────
+let sbAnnual   = [];  // rows from asset_annual_data
+let sbSegments = [];  // rows from asset_segments
+let sbYears    = [];  // sorted desc
+
+async function loadHistoricalData() {
+  try {
+    const assetRes = await fetch(
+      SUPABASE_URL + '/rest/v1/assets?ticker=eq.V&select=id',
+      { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } }
+    );
+    const assets = await assetRes.json();
+    if (!assets || !assets[0]) return;
+    const assetId = assets[0].id;
+
+    const [annRes, segRes] = await Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/asset_annual_data?asset_id=eq.' + assetId + '&order=fiscal_year.desc',
+        { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } }),
+      fetch(SUPABASE_URL + '/rest/v1/asset_segments?asset_id=eq.' + assetId + '&order=fiscal_year.desc&order=sort_order.asc',
+        { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } }),
+    ]);
+
+    sbAnnual   = await annRes.json() || [];
+    sbSegments = await segRes.json() || [];
+    sbYears    = sbAnnual.map(r => r.fiscal_year);
+  } catch(e) { console.warn('Historical data load failed:', e); }
+}
+
+// ── Data helpers ───────────────────────────────────────────
+function getVal(key, year) {
+  const row = sbAnnual.find(r => r.fiscal_year === year);
+  if (!row) return null;
+  if (row[key] != null) return parseFloat(row[key]);
+  // Auto-calc margins from income data
+  if (key === 'gross_margin' && row.revenue && row.gross_profit != null) return row.gross_profit / row.revenue;
+  if (key === 'op_margin'    && row.revenue && row.op_income != null)    return row.op_income   / row.revenue;
+  if (key === 'net_margin'   && row.revenue && row.net_income != null)   return row.net_income  / row.revenue;
+  return null;
+}
+
+function calcAvg(key, n) {
+  const vals = sbYears.slice(0, n).map(y => getVal(key, y)).filter(v => v != null);
+  return vals.length ? vals.reduce((s,v) => s+v, 0) / vals.length : null;
+}
+
+function calcCagr(key, n) {
+  if (sbYears.length < n + 1) return null;
+  const end   = getVal(key, sbYears[0]);
+  const start = getVal(key, sbYears[n]);
+  if (end == null || start == null || start <= 0 || end <= 0) return null;
+  return Math.pow(end / start, 1/n) - 1;
+}
+
+function calcYoy(key) {
+  if (sbYears.length < 2) return null;
+  const c = getVal(key, sbYears[0]), p = getVal(key, sbYears[1]);
+  if (c == null || p == null || p === 0) return null;
+  return (c - p) / Math.abs(p);
+}
+
+// ── Format helpers ─────────────────────────────────────────
+function fmtVal(key, v) {
+  if (v == null) return '<span style="color:var(--muted)">—</span>';
+  const pctKeys = ['gross_margin','op_margin','net_margin','roic'];
+  if (pctKeys.includes(key)) return (v * 100).toFixed(2) + '%';
+  if (['eps','dividends_per_share'].includes(key)) return v.toFixed(2) + ' $';
+  if (['current_ratio','lt_debt_capital','debt_equity'].includes(key)) return v.toFixed(2);
+  if (key === 'shares_outstanding') return v.toFixed(0) + ' M';
+  // big numbers (revenue, income etc) in billions
+  if (Math.abs(v) >= 1000) return (v/1000).toFixed(2) + ' B $';
+  return v.toFixed(2) + ' M $';
+}
+
+function fmtGrowth(v, invert=false) {
+  if (v == null) return '<span style="color:var(--muted)">—</span>';
+  const pos  = v >= 0;
+  const good = invert ? !pos : pos;
+  const col  = good ? 'var(--green)' : 'var(--red)';
+  return '<span style="color:' + col + ';font-weight:600">' + (pos?'+':'') + (v*100).toFixed(2) + '%</span>';
+}
+
+// ── Build dynamic Dados Gerais ─────────────────────────────
+const INCOME_KEYS = [
+  { key:'eps',                label:'EPS',                  invert:false },
+  { key:'revenue',            label:'Receita Total',        invert:false },
+  { key:'gross_profit',       label:'Receita Bruta',        invert:false },
+  { key:'op_income',          label:'Receita Operacional',  invert:false },
+  { key:'net_income',         label:'Receita Líquida',      invert:false },
+  { key:'fcf',                label:'Free Cash Flow',       invert:false },
+  { key:'ebitda',             label:'EBITDA',               invert:false },
+  { key:'dividends_per_share',label:'Dividendos/Ação',      invert:false },
+  { key:'shares_outstanding', label:'Ações em circulação',  invert:true  },
+];
+
+const RATIO_KEYS = [
+  { key:'gross_margin',   label:'Gross Margin',          invert:false },
+  { key:'op_margin',      label:'Margem Operacional',    invert:false },
+  { key:'net_margin',     label:'Margem Líquida',        invert:false },
+  { key:'roic',           label:'ROIC',                  invert:false },
+  { key:'current_ratio',  label:'Current Ratio',         invert:false },
+  { key:'lt_debt_capital',label:'LT Debt / Capital',     invert:true  },
+  { key:'debt_equity',    label:'Debt / Equity',         invert:true  },
+];
+
+function buildSummaryTable(keys, wrapperId, title, sub) {
+  if (!sbYears.length) return;
+  const ny = sbYears[0];
+
+  let html = '<table class="avg-table"><thead><tr>'
+    + '<th></th>'
+    + '<th>ÚLT. ANO</th>'
+    + '<th>MÉD. 3A</th>'
+    + '<th>MÉD. 5A</th>'
+    + '<th>MÉD. 10A</th>'
+    + '<th style="border-left:1px solid var(--border);padding-left:14px">YoY</th>'
+    + '<th>CAGR 3A</th>'
+    + '<th>CAGR 5A</th>'
+    + '<th>CAGR 10A</th>'
+    + '</tr></thead><tbody>';
+
+  keys.forEach((f, fi) => {
+    const v  = getVal(f.key, ny);
+    const id = 'mr-' + f.key;
+    html += `<tr class="metric-row" id="${id}" onclick="toggleHistory('${f.key}','${f.label}',${f.invert},'${wrapperId}')" style="background:${fi%2===0?'var(--card)':'rgba(0,0,0,.02)'}">`;
+    html += `<td><span class="expand-icon">▶</span>${f.label}</td>`;
+    html += `<td class="hi">${fmtVal(f.key, v)}</td>`;
+    html += `<td>${fmtVal(f.key, calcAvg(f.key,3))}</td>`;
+    html += `<td>${fmtVal(f.key, calcAvg(f.key,5))}</td>`;
+    html += `<td>${fmtVal(f.key, calcAvg(f.key,10))}</td>`;
+    html += `<td style="border-left:1px solid var(--border);padding-left:14px">${fmtGrowth(calcYoy(f.key), f.invert)}</td>`;
+    html += `<td>${fmtGrowth(calcCagr(f.key,3),  f.invert)}</td>`;
+    html += `<td>${fmtGrowth(calcCagr(f.key,5),  f.invert)}</td>`;
+    html += `<td>${fmtGrowth(calcCagr(f.key,10), f.invert)}</td>`;
+    html += '</tr>';
+    // history placeholder row
+    html += `<tr class="history-row" id="hist-${f.key}"><td colspan="9"><div class="history-inner" id="hinner-${f.key}"></div></td></tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById(wrapperId).innerHTML = html;
+}
+
+// ── Toggle history row ─────────────────────────────────────
+function toggleHistory(key, label, invert, wrapperId) {
+  const row    = document.getElementById('mr-' + key);
+  const hrow   = document.getElementById('hist-' + key);
+  const inner  = document.getElementById('hinner-' + key);
+  const isOpen = hrow.classList.contains('open');
+
+  // Close all others in this table
+  document.getElementById(wrapperId).querySelectorAll('.metric-row').forEach(r => r.classList.remove('expanded'));
+  document.getElementById(wrapperId).querySelectorAll('.history-row').forEach(r => r.classList.remove('open'));
+
+  if (!isOpen) {
+    row.classList.add('expanded');
+    hrow.classList.add('open');
+
+    // Build history table
+    const pctKeys = ['gross_margin','op_margin','net_margin','roic'];
+    const isPct   = pctKeys.includes(key);
+
+    let h = '<table><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
+    sbYears.forEach((year, i) => {
+      const v    = getVal(key, year);
+      const prev = i < sbYears.length-1 ? getVal(key, sbYears[i+1]) : null;
+      let yoy = '—';
+      if (v != null && prev != null && prev !== 0) {
+        const g   = (v - prev) / Math.abs(prev);
+        const good = invert ? g <= 0 : g >= 0;
+        yoy = '<span style="color:' + (good?'var(--green)':'var(--red)') + ';font-weight:600">'
+            + (g>=0?'+':'') + (g*100).toFixed(2) + '%</span>';
+      }
+      const bg = i % 2 === 0 ? '#fff' : 'rgba(83,68,232,.02)';
+      h += `<tr style="background:${bg}"><td>${year}</td><td>${fmtVal(key, v)}</td><td>${yoy}</td></tr>`;
+    });
+    h += '</tbody></table>';
+    inner.innerHTML = h;
+  }
+}
+
+// ── Dynamic segment table ──────────────────────────────────
+const SEG_TOOLTIPS = {
+  'Service Revenue':           'São taxas cobradas aos bancos e instituições financeiras pelo uso da marca Visa e pelo volume de pagamentos gerado. Quanto mais as pessoas usam os cartões Visa de um banco, mais a Visa ganha aqui.',
+  'Data Processing Revenue':   'É o "coração tecnológico". Foca-se na autorização, compensação e liquidação de cada transação. Quando passas o cartão no terminal, a Visa cobra uma pequena taxa fixa por processar essa informação e garantir que o dinheiro vai do ponto A para o ponto B com segurança.',
+  'International Transaction': 'Esta parte foca-se em pagamentos feitos fora do país de origem do cartão ou que envolvam conversão de moeda. É uma das áreas mais rentáveis, pois as taxas de câmbio e processamento transfronteiriço são mais elevadas.',
+  'Other':                     'Inclui serviços de consultoria, licenças de utilização, segurança contra fraudes e análise de dados para parceiros.',
+  'Client Incentives':         'Tal como a UnitedHealth tem as "eliminations" para não contar dinheiro duas vezes, a Visa subtrai estes incentivos da sua receita bruta. São pagamentos ou descontos que a Visa dá aos bancos e parceiros para que eles continuem a emitir cartões Visa em vez de mudarem para a Mastercard. É o "custo" para manter a rede dominante e em crescimento.',
+};
+
+function buildDynamicSegTable() {
+  if (!sbSegments.length) {
+    // Fallback to static data
+    buildSegTable();
+    return;
+  }
+
+  const segYears = [...new Set(sbSegments.map(s => s.fiscal_year))].sort((a,b) => b-a);
+  const newestY  = segYears[0];
+  const names    = [...new Set(sbSegments.filter(s => s.fiscal_year === newestY).sort((a,b)=>a.sort_order-b.sort_order).map(s => s.segment_name))];
+
+  // Total positive revenues for % calculation
+  const total = sbSegments
+    .filter(s => s.fiscal_year === newestY && s.revenue > 0)
+    .reduce((sum, s) => sum + parseFloat(s.revenue||0), 0);
+
+  const tbody = document.getElementById('seg-tbody');
+  let html = '';
+
+  names.forEach((name, idx) => {
+    const row    = sbSegments.find(s => s.fiscal_year === newestY && s.segment_name === name);
+    const val    = row ? parseFloat(row.revenue||0) : null;
+    const isNeg  = name.toLowerCase().includes('incentive');
+    const pct    = (!isNeg && val != null && total > 0) ? val / total : null;
+    const barW   = pct ? Math.round(pct * 100) : 0;
+    const tooltip = SEG_TOOLTIPS[name] || '';
+
+    // YoY from segments
+    let yoy = null;
+    if (segYears.length >= 2) {
+      const prevRow = sbSegments.find(s => s.fiscal_year === segYears[1] && s.segment_name === name);
+      const prev    = prevRow ? parseFloat(prevRow.revenue||0) : null;
+      if (val != null && prev != null && prev !== 0) yoy = (val - prev) / Math.abs(prev);
+    }
+
+    const nameCell = tooltip
+      ? `<div class="seg-tooltip-wrap">${name}
+           <button class="seg-info-btn">★</button>
+           <div class="seg-tooltip">${tooltip}</div>
+         </div>`
+      : name;
+
+    html += `<tr class="metric-row" onclick="toggleSegHistory('${name}',${idx})" id="seg-mr-${idx}">`;
+    html += `<td><span class="expand-icon">▶</span>${nameCell}</td>`;
+    html += `<td class="${isNeg?'neg':''}">${val!=null?(isNeg?'':'')+Math.abs(val/1000).toFixed(2)+' B $':'—'}</td>`;
+    html += `<td>${pct ? (pct*100).toFixed(1)+'%' : '—'}</td>`;
+    html += `<td class="bar-cell">${pct?'<div class="bar-bg"><div class="bar-fill" style="width:'+barW+'%"></div></div>':''}</td>`;
+    html += `<td class="${yoy!=null?(yoy>=0?'pos':'neg'):''}">${yoy!=null?((yoy>=0?'+':'')+((yoy)*100).toFixed(1)+'%'):'—'}</td>`;
+    html += `</tr>`;
+    // History row
+    html += `<tr class="history-row" id="seghist-${idx}"><td colspan="5"><div class="history-inner" id="seghinner-${idx}"></div></td></tr>`;
+  });
+
+  tbody.innerHTML = html;
+}
+
+function toggleSegHistory(name, idx) {
+  const row   = document.getElementById('seg-mr-' + idx);
+  const hrow  = document.getElementById('seghist-' + idx);
+  const inner = document.getElementById('seghinner-' + idx);
+  const isOpen = hrow.classList.contains('open');
+
+  document.querySelectorAll('#seg-tbody .metric-row').forEach(r => r.classList.remove('expanded'));
+  document.querySelectorAll('#seg-tbody .history-row').forEach(r => r.classList.remove('open'));
+
+  if (!isOpen) {
+    row.classList.add('expanded');
+    hrow.classList.add('open');
+
+    const segYears = [...new Set(sbSegments.map(s => s.fiscal_year))].sort((a,b) => b-a);
+
+    let h = '<table><thead><tr><th>Ano</th><th>Receita (B $)</th><th>YoY</th></tr></thead><tbody>';
+    segYears.forEach((year, i) => {
+      const cur  = sbSegments.find(s => s.fiscal_year === year && s.segment_name === name);
+      const prev = i < segYears.length-1 ? sbSegments.find(s => s.fiscal_year === segYears[i+1] && s.segment_name === name) : null;
+      const v    = cur  ? parseFloat(cur.revenue||0)  : null;
+      const p    = prev ? parseFloat(prev.revenue||0) : null;
+      let yoy = '—';
+      if (v != null && p != null && p !== 0) {
+        const g = (v-p)/Math.abs(p);
+        yoy = '<span style="color:' + (g>=0?'var(--green)':'var(--red)') + ';font-weight:600">' + (g>=0?'+':'') + (g*100).toFixed(1) + '%</span>';
+      }
+      const bg = i%2===0?'#fff':'rgba(83,68,232,.02)';
+      h += `<tr style="background:${bg}"><td>${year}</td><td>${v!=null?Math.abs(v/1000).toFixed(3)+' B $':'—'}</td><td>${yoy}</td></tr>`;
+    });
+    h += '</tbody></table>';
+    inner.innerHTML = h;
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────
-fetchPrice();
-fetchMetrics();
-setInterval(fetchPrice, 30000);
-buildCharts();
-buildAnnualTable();
-buildRatiosTable();
-buildSegTable();
+async function init() {
+  await loadHistoricalData();
+
+  // Build dynamic tables from Supabase data
+  if (sbYears.length) {
+    buildSummaryTable(INCOME_KEYS, 'dados-gerais-wrap', 'Dados Gerais', 'Do Supabase');
+    buildSummaryTable(RATIO_KEYS,  'racios-wrap',       'Rácios',       'Do Supabase');
+    buildDynamicSegTable();
+  } else {
+    // Fallback to static data
+    buildAnnualTable();
+    buildRatiosTable();
+    buildSegTable();
+  }
+
+  buildCharts();
+  fetchPrice();
+  fetchMetrics();
+  setInterval(fetchPrice, 30000);
+}
+
+init();
 
 // Sidebar active highlight on scroll
 const navLinks = document.querySelectorAll('.side-nav a');
