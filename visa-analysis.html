@@ -1257,30 +1257,26 @@ function toggleHistory(key, label, invert, wrapperId) {
 
   // If already open, just close (toggle off)
   if (isOpen) return;
-    row.classList.add('expanded');
-    hrow.classList.add('open');
 
-    // Build history table
-    const pctKeys = ['gross_margin','op_margin','net_margin','roic'];
-    const isPct   = pctKeys.includes(key);
+  row.classList.add('expanded');
+  hrow.classList.add('open');
 
-    let h = '<table><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
-    sbYears.forEach((year, i) => {
-      const v    = getVal(key, year);
-      const prev = i < sbYears.length-1 ? getVal(key, sbYears[i+1]) : null;
-      let yoy = '—';
-      if (v != null && prev != null && prev !== 0) {
-        const g   = (v - prev) / Math.abs(prev);
-        const good = invert ? g <= 0 : g >= 0;
-        yoy = '<span style="color:' + (good?'var(--green)':'var(--red)') + ';font-weight:600">'
-            + (g>=0?'+':'') + (g*100).toFixed(2) + '%</span>';
-      }
-      const bg = i % 2 === 0 ? '#fff' : 'rgba(83,68,232,.02)';
-      h += `<tr style="background:${bg}"><td>${year}</td><td>${fmtVal(key, v)}</td><td>${yoy}</td></tr>`;
-    });
-    h += '</tbody></table>';
-    inner.innerHTML = h;
-  }
+  let h = '<table><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
+  sbYears.forEach((year, i) => {
+    const v    = getVal(key, year);
+    const prev = i < sbYears.length-1 ? getVal(key, sbYears[i+1]) : null;
+    let yoy = '—';
+    if (v != null && prev != null && prev !== 0) {
+      const g    = (v - prev) / Math.abs(prev);
+      const good = invert ? g <= 0 : g >= 0;
+      yoy = '<span style="color:' + (good?'var(--green)':'var(--red)') + ';font-weight:600">'
+          + (g>=0?'+':'') + (g*100).toFixed(2) + '%</span>';
+    }
+    const bg = i % 2 === 0 ? '#fff' : 'rgba(83,68,232,.02)';
+    h += '<tr style="background:'+bg+'"><td>'+year+'</td><td>'+fmtVal(key, v)+'</td><td>'+yoy+'</td></tr>';
+  });
+  h += '</tbody></table>';
+  inner.innerHTML = h;
 }
 
 // ── Dynamic segment table ──────────────────────────────────
@@ -1384,7 +1380,6 @@ function toggleSegHistory(name, idx) {
     });
     h += '</tbody></table>';
     inner.innerHTML = h;
-  }
 }
 
 // ── Init ──────────────────────────────────────────────────
