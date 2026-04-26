@@ -653,40 +653,55 @@ function renderAssets() {
 }
 
 /* HISTORICAL DATA TAB */
-const YEARS_LIST = [2025,2024,2023,2022,2021,2020,2019,2018,2017,2016,2015,2014,2013,2012];
+/* ════════════════════════════════════════
+   HISTORICAL DATA — improved
+   ════════════════════════════════════════ */
+
+let YEARS_LIST = [2025,2024,2023,2022,2021,2020,2019,2018,2017,2016,2015,2014,2013,2012];
+const VISIBLE_YEARS = 7; // number of year columns visible at once
+let yearOffset = 0; // 0 = most recent, 1 = shift one older, etc.
 
 const INCOME_FIELDS = [
-  { key:'eps',              label:'EPS',                         unit:'$',   decimals:4 },
-  { key:'revenue',          label:'Revenue / Receita Total',     unit:'M$',  decimals:2 },
-  { key:'gross_profit',     label:'Gross Profit / Receita Bruta',unit:'M$',  decimals:2 },
-  { key:'op_income',        label:'Operating Income / Rec. Operacional', unit:'M$', decimals:2 },
-  { key:'net_income',       label:'Net Income / Receita L\xedquida', unit:'M$', decimals:2 },
-  { key:'fcf',              label:'Free Cash Flow',              unit:'M$',  decimals:2 },
-  { key:'ebitda',           label:'EBITDA',                      unit:'M$',  decimals:2 },
-  { key:'dividends_per_share',label:'Dividends per Share',       unit:'$',   decimals:4 },
-  { key:'shares_outstanding', label:'Shares Outstanding',        unit:'M',   decimals:2 },
+  { key:'eps',               label:'EPS',                              unit:'$',  decimals:4 },
+  { key:'revenue',           label:'Revenue / Receita Total',          unit:'M$', decimals:2 },
+  { key:'gross_profit',      label:'Gross Profit / Receita Bruta',     unit:'M$', decimals:2 },
+  { key:'op_income',         label:'Operating Income / Rec. Operacional', unit:'M$', decimals:2 },
+  { key:'net_income',        label:'Net Income / Receita L\xedquida',  unit:'M$', decimals:2 },
+  { key:'fcf',               label:'Free Cash Flow',                   unit:'M$', decimals:2 },
+  { key:'ebitda',            label:'EBITDA',                           unit:'M$', decimals:2 },
+  { key:'dividends_per_share',label:'Dividends per Share',             unit:'$',  decimals:4 },
+  { key:'shares_outstanding', label:'Shares Outstanding',              unit:'M',  decimals:2 },
 ];
 
 const RATIO_FIELDS = [
-  { key:'gross_margin',  label:'Gross Margin / Margem Bruta',           unit:'%', decimals:4, isPct:true },
-  { key:'op_margin',     label:'Operation Margin / Margem Operacional',  unit:'%', decimals:4, isPct:true },
-  { key:'net_margin',    label:'Net Profit Margin / Margem L\xedquida', unit:'%', decimals:4, isPct:true },
-  { key:'roic',          label:'ROIC',                                    unit:'%', decimals:4, isPct:true },
-  { key:'current_ratio', label:'Current Ratio',                           unit:'',  decimals:4 },
-  { key:'lt_debt_capital',label:'Long-term Debt / Capital',              unit:'',  decimals:4 },
-  { key:'debt_equity',   label:'Debt / Equity Ratio',                     unit:'',  decimals:4 },
+  { key:'gross_margin',   label:'Gross Margin / Margem Bruta',          unit:'%', decimals:4, isPct:true },
+  { key:'op_margin',      label:'Operation Margin / Margem Operacional', unit:'%', decimals:4, isPct:true },
+  { key:'net_margin',     label:'Net Profit Margin / Margem L\xedquida',unit:'%', decimals:4, isPct:true },
+  { key:'roic',           label:'ROIC',                                  unit:'%', decimals:4, isPct:true },
+  { key:'current_ratio',  label:'Current Ratio',                         unit:'',  decimals:4 },
+  { key:'lt_debt_capital',label:'Long-term Debt / Capital',             unit:'',  decimals:4 },
+  { key:'debt_equity',    label:'Debt / Equity Ratio',                   unit:'',  decimals:4 },
 ];
 
-let histAssetId   = null;
-let histData      = {};   // { year: { field: value } }
-let histSegments  = {};   // { year: [ { name, revenue } ] }
-let histView      = 'income'; // 'income' | 'ratios' | 'segments'
-let segYears      = [2025, 2024, 2023];
+// Custom fields per asset — stored in memory, saved to asset_custom_fields (future)
+let customIncomeFields = []; // { key:'custom_N', label:'...' }
+let customRatioFields  = [];
 
+let histAssetId  = null;
+let histData     = {};  // { year: { field: value } }
+let histSegments = {};  // { year: [ { name, revenue } ] }
+let histView     = 'income';
+let segYears     = [2025, 2024, 2023];
+
+// ── Render main tab ──────────────────────────────────────
 function renderHistorico() {
   const assetOptions = allAssets.map(a =>
-    `<option value="${a.id}" ${a.id === histAssetId ? 'selected' : ''}>${a.ticker} — ${a.name}</option>`
+    `<option value="${a.id}" ${a.id===histAssetId?'selected':''}>${a.ticker} — ${a.name}</option>`
   ).join('');
+
+  const maxOffset = Math.max(0, YEARS_LIST.length - VISIBLE_YEARS);
+  const canPrev = yearOffset < maxOffset;
+  const canNext = yearOffset > 0;
 
   document.getElementById('tab-content').innerHTML = `
     <div class="page-hdr">
@@ -706,126 +721,254 @@ function renderHistorico() {
         <option value="">— Selecionar ativo —</option>
         ${assetOptions}
       </select>
+
       ${histAssetId ? `
-        <div class="hist-tabs">
-          <button class="hist-tab ${histView==='income'?'active':''}" onclick="setHistView('income',this)">Income Statement</button>
-          <button class="hist-tab ${histView==='ratios'?'active':''}" onclick="setHistView('ratios',this)">R\xe1cios</button>
-          <button class="hist-tab ${histView==='segments'?'active':''}" onclick="setHistView('segments',this)">Segmentos</button>
-        </div>
-      ` : ''}
+      <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+        <span style="font-size:11px;color:var(--muted)">Anos vis\xedveis:</span>
+        <button onclick="shiftYears(1)" ${!canNext?'disabled':''} title="Mais recentes"
+          style="border:1px solid var(--border);background:var(--card);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:13px;${!canNext?'opacity:.35':''}">&#8592;</button>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim);min-width:80px;text-align:center">
+          ${YEARS_LIST[yearOffset+VISIBLE_YEARS-1]} — ${YEARS_LIST[yearOffset]}
+        </span>
+        <button onclick="shiftYears(-1)" ${!canPrev?'disabled':''} title="Mais antigos"
+          style="border:1px solid var(--border);background:var(--card);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:13px;${!canPrev?'opacity:.35':''}">&#8594;</button>
+        <button onclick="addYear()" title="Adicionar ano"
+          style="border:1px solid var(--accent);background:rgba(83,68,232,.08);color:var(--accent);border-radius:7px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;margin-left:4px">
+          + Ano
+        </button>
+      </div>` : ''}
     </div>
+
+    ${histAssetId ? `
+    <div class="hist-tabs">
+      <button class="hist-tab ${histView==='income'?'active':''}" onclick="setHistView('income')">Income Statement</button>
+      <button class="hist-tab ${histView==='ratios'?'active':''}" onclick="setHistView('ratios')">R\xe1cios</button>
+      <button class="hist-tab ${histView==='segments'?'active':''}" onclick="setHistView('segments')">Segmentos</button>
+    </div>` : ''}
 
     <div id="hist-body">
       ${histAssetId ? buildHistBody() : `
         <div class="empty">
           <p>Seleciona um ativo acima</p>
-          <p>Escolhe um ativo para inserir ou editar os seus dados hist\xf3ricos</p>
+          <p>Escolhe um ativo para inserir os seus dados hist\xf3ricos</p>
         </div>`}
     </div>`;
 }
 
+// ── Year navigation ──────────────────────────────────────
+function shiftYears(dir) {
+  // dir = -1 → go older, +1 → go newer
+  const maxOffset = Math.max(0, YEARS_LIST.length - VISIBLE_YEARS);
+  yearOffset = Math.max(0, Math.min(maxOffset, yearOffset - dir));
+  document.getElementById('hist-body').innerHTML = buildHistBody();
+  renderHistorico(); // re-render to update button states
+}
+
+function addYear() {
+  const newest = YEARS_LIST[0];
+  const newYear = newest + 1;
+  if (YEARS_LIST.includes(newYear)) return;
+  YEARS_LIST = [newYear, ...YEARS_LIST];
+  yearOffset = 0; // jump to newest
+  document.getElementById('hist-body').innerHTML = buildHistBody();
+  renderHistorico();
+}
+
+// ── Visible years window ─────────────────────────────────
+function getVisibleYears() {
+  return YEARS_LIST.slice(yearOffset, yearOffset + VISIBLE_YEARS);
+}
+
+// ── Load asset data ──────────────────────────────────────
 async function selectHistAsset(id) {
   histAssetId = id || null;
-  histData = {};
-  histSegments = {};
+  histData    = {};
+  histSegments= {};
+  yearOffset  = 0;
+  customIncomeFields = [];
+  customRatioFields  = [];
   if (!id) { renderHistorico(); return; }
 
-  // Load existing data from Supabase
   const [annRes, segRes] = await Promise.all([
     sb.from('asset_annual_data').select('*').eq('asset_id', id),
     sb.from('asset_segments').select('*').eq('asset_id', id).order('fiscal_year').order('sort_order'),
   ]);
 
-  (annRes.data || []).forEach(row => {
-    histData[row.fiscal_year] = row;
-  });
+  (annRes.data || []).forEach(row => { histData[row.fiscal_year] = row; });
 
-  // Build segments structure: { year: [{name, revenue, sort_order}] }
   const segsRaw = segRes.data || [];
-  const yearsWithSegs = [...new Set(segsRaw.map(s => s.fiscal_year))].sort((a,b)=>b-a);
+  const yearsWithSegs = [...new Set(segsRaw.map(s=>s.fiscal_year))].sort((a,b)=>b-a);
   if (yearsWithSegs.length) segYears = yearsWithSegs.slice(0,3);
 
   segsRaw.forEach(s => {
     if (!histSegments[s.fiscal_year]) histSegments[s.fiscal_year] = [];
-    histSegments[s.fiscal_year].push({ name: s.segment_name, revenue: s.revenue, sort_order: s.sort_order });
+    histSegments[s.fiscal_year].push({ name:s.segment_name, revenue:s.revenue, sort_order:s.sort_order });
+  });
+
+  // Detect any years in data that aren't in YEARS_LIST
+  const dataYears = Object.keys(histData).map(Number);
+  dataYears.forEach(y => {
+    if (!YEARS_LIST.includes(y)) YEARS_LIST = [y, ...YEARS_LIST].sort((a,b)=>b-a);
   });
 
   renderHistorico();
 }
 
-function setHistView(view, btn) {
+function setHistView(view) {
   histView = view;
-  renderHistorico();
+  document.getElementById('hist-body').innerHTML = buildHistBody();
+  // Update tab active state
+  document.querySelectorAll('.hist-tab').forEach((b,i) => {
+    b.classList.toggle('active', ['income','ratios','segments'][i] === view);
+  });
 }
 
 function buildHistBody() {
-  if (histView === 'income')   return buildAnnualTable(INCOME_FIELDS, 'income');
-  if (histView === 'ratios')   return buildAnnualTable(RATIO_FIELDS, 'ratios');
+  if (histView === 'income')   return buildAnnualTable([...INCOME_FIELDS, ...customIncomeFields], 'income');
+  if (histView === 'ratios')   return buildAnnualTable([...RATIO_FIELDS,  ...customRatioFields],  'ratios');
   if (histView === 'segments') return buildSegmentEditor();
   return '';
 }
 
+// ── Annual table with sliding window + YoY growth ────────
 function buildAnnualTable(fields, section) {
-  const cols = YEARS_LIST;
-  const colW = 100;
-  const labelW = 220;
-  const totalW = labelW + cols.length * colW;
+  const cols  = getVisibleYears(); // e.g. [2025,2024,2023,2022,2021,2020,2019]
+  const colW  = 118;
+  const labelW= 230;
 
-  let html = `<div class="annual-grid-wrap">
-    <div class="annual-grid" style="grid-template-columns:${labelW}px repeat(${cols.length},${colW}px);width:${totalW}px;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-    <!-- Year headers -->
-    <div style="padding:10px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--card2);border-bottom:2px solid var(--border);border-right:1px solid var(--border)">M\xe9trica</div>
-    ${cols.map(y => `<div style="padding:10px;font-size:12px;font-weight:700;color:var(--text);text-align:center;background:var(--card2);border-bottom:2px solid var(--border);border-right:1px solid var(--border)">${y}</div>`).join('')}`;
+  let html = `
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+    <div style="overflow-x:auto;">
+    <table style="width:${labelW + cols.length*colW}px;border-collapse:collapse;min-width:100%">
+      <thead>
+        <tr>
+          <th style="width:${labelW}px;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--card2);border-bottom:2px solid var(--border);border-right:1px solid var(--border);position:sticky;left:0;z-index:2">M\xe9trica</th>
+          ${cols.map(y=>`<th style="width:${colW}px;padding:10px 8px;text-align:center;font-size:13px;font-weight:700;color:var(--text);background:var(--card2);border-bottom:2px solid var(--border);border-right:1px solid var(--border)">${y}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>`;
 
   fields.forEach((f, fi) => {
-    const bg = fi % 2 === 0 ? 'var(--card)' : 'var(--bg)';
-    html += `<div style="padding:9px 12px;font-size:12px;color:var(--dim);font-weight:500;background:var(--card2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);display:flex;align-items:center;">${f.label}</div>`;
-    cols.forEach(year => {
-      const row = histData[year] || {};
+    const bg = fi % 2 === 0 ? 'var(--card)' : 'rgba(0,0,0,.02)';
+    html += `<tr>
+      <td style="padding:0 14px;font-size:12px;color:var(--dim);font-weight:500;background:var(--card2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);position:sticky;left:0;z-index:1;height:52px">${f.label}${f.custom?`<button onclick="removeCustomField('${section}','${f.key}')" style="margin-left:6px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px">&times;</button>`:''}</td>`;
+
+    cols.forEach((year, ci) => {
+      const row      = histData[year] || {};
+      const rowPrev  = histData[cols[ci+1]] || {}; // one year older
       let val = row[f.key] != null ? row[f.key] : '';
-      if (f.isPct && val !== '') val = (parseFloat(val) * 100).toFixed(2);
-      html += `<div style="padding:4px 6px;background:${bg};border-bottom:1px solid var(--border);border-right:1px solid var(--border);">
+      let dispVal = val !== '' ? (f.isPct ? (parseFloat(val)*100).toFixed(2) : String(val)) : '';
+
+      // YoY growth
+      let growthHtml = '';
+      if (val !== '' && rowPrev[f.key] != null && rowPrev[f.key] !== 0) {
+        const prev = rowPrev[f.key];
+        const curr = parseFloat(val);
+        const gr   = (curr - prev) / Math.abs(prev) * 100;
+        const pos  = gr >= 0;
+        // For some metrics, negative is good (shares outstanding going down = buybacks)
+        const invertGood = f.key === 'shares_outstanding';
+        const isGood = invertGood ? !pos : pos;
+        growthHtml = `<div style="font-size:9.5px;font-weight:600;color:${isGood?'var(--green)':'var(--red)'};margin-top:1px;text-align:right">${pos?'+':''}${gr.toFixed(1)}%</div>`;
+      }
+
+      html += `<td style="padding:4px 6px;background:${bg};border-bottom:1px solid var(--border);border-right:1px solid var(--border);vertical-align:middle">
         <input class="ag-input" type="number" step="any"
           data-year="${year}" data-field="${f.key}" data-pct="${f.isPct||false}"
-          value="${val}" placeholder="—"
-          oninput="setHistVal(${year},'${f.key}',this.value,${f.isPct||false})">
-      </div>`;
+          value="${dispVal}" placeholder="—"
+          oninput="handleHistInput(${year},'${f.key}',this.value,${f.isPct||false},this)">
+        ${growthHtml}
+      </td>`;
     });
+    html += `</tr>`;
   });
 
-  html += `</div></div>`;
+  html += `</tbody></table></div>`;
+
+  // Add custom metric button
+  html += `
+    <button onclick="addCustomField('${section}')"
+      style="display:flex;align-items:center;gap:6px;padding:10px 16px;font-size:12.5px;color:var(--dim);background:none;border:none;border-top:1px solid var(--border);cursor:pointer;font-family:'Outfit',sans-serif;width:100%;transition:color .15s"
+      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Adicionar m\xe9trica personalizada
+    </button>
+  </div>`;
+
   return html;
 }
 
+// ── Handle input + live YoY update ──────────────────────
+function handleHistInput(year, field, rawVal, isPct, inputEl) {
+  setHistVal(year, field, rawVal, isPct);
+  // Recalculate YoY for this field across visible years
+  setTimeout(() => {
+    const cols = getVisibleYears();
+    cols.forEach((y, ci) => {
+      const inp = document.querySelector(`.ag-input[data-year="${y}"][data-field="${field}"]`);
+      if (!inp) return;
+      const td = inp.parentElement;
+      const oldGrowth = td.querySelector('div');
+      const row     = histData[y] || {};
+      const rowPrev = histData[cols[ci+1]] || {};
+      const val  = row[field];
+      const prev = rowPrev[field];
+      if (oldGrowth) oldGrowth.remove();
+      if (val != null && prev != null && prev !== 0) {
+        const gr  = (val - prev) / Math.abs(prev) * 100;
+        const pos = gr >= 0;
+        const invertGood = field === 'shares_outstanding';
+        const isGood = invertGood ? !pos : pos;
+        const div = document.createElement('div');
+        div.style.cssText = `font-size:9.5px;font-weight:600;color:${isGood?'var(--green)':'var(--red)'};margin-top:1px;text-align:right`;
+        div.textContent = (pos?'+':'') + gr.toFixed(1) + '%';
+        td.appendChild(div);
+      }
+    });
+  }, 50);
+}
+
+// ── Custom fields ────────────────────────────────────────
+function addCustomField(section) {
+  const label = prompt('Nome da m\xe9trica:');
+  if (!label) return;
+  const key = 'custom_' + Date.now();
+  const field = { key, label, unit:'', decimals:2, custom:true };
+  if (section === 'income') customIncomeFields.push(field);
+  else customRatioFields.push(field);
+  document.getElementById('hist-body').innerHTML = buildHistBody();
+}
+
+function removeCustomField(section, key) {
+  if (section === 'income') customIncomeFields = customIncomeFields.filter(f=>f.key!==key);
+  else customRatioFields = customRatioFields.filter(f=>f.key!==key);
+  document.getElementById('hist-body').innerHTML = buildHistBody();
+}
+
+// ── Segment editor ───────────────────────────────────────
 function buildSegmentEditor() {
-  // Years selector for segments
-  const availYears = YEARS_LIST.slice(0, 8);
+  const availYears = YEARS_LIST.slice(0, 10);
   const segYearChecks = availYears.map(y =>
     `<label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:normal;text-transform:none;letter-spacing:0;cursor:pointer">
-      <input type="checkbox" ${segYears.includes(y) ? 'checked' : ''}
+      <input type="checkbox" ${segYears.includes(y)?'checked':''}
         onchange="toggleSegYear(${y},this.checked)" style="width:auto;padding:0;border-radius:3px">
-      ${y}
-    </label>`
+      ${y}</label>`
   ).join('');
 
-  // Collect all unique segment names across years
   let allSegNames = [];
   segYears.forEach(y => {
-    (histSegments[y] || []).forEach(s => {
-      if (!allSegNames.includes(s.name)) allSegNames.push(s.name);
-    });
+    (histSegments[y]||[]).forEach(s => { if (!allSegNames.includes(s.name)) allSegNames.push(s.name); });
   });
   if (allSegNames.length === 0) allSegNames = [''];
 
-  const nYears = segYears.length;
-  const colDef = `240px repeat(${nYears},130px) 40px`;
+  const nYears  = segYears.length;
+  const colDef  = `240px repeat(${nYears},130px) 40px`;
 
   let html = `
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Anos:</span>
       ${segYearChecks}
     </div>
-
     <div class="seg-editor" style="--seg-years:${nYears}">
       <div class="seg-row header" style="grid-template-columns:${colDef}">
         <div class="seg-cell header">Segmento</div>
@@ -835,138 +978,113 @@ function buildSegmentEditor() {
 
   allSegNames.forEach((name, idx) => {
     html += `<div class="seg-row" style="grid-template-columns:${colDef}" data-seg-idx="${idx}">
-      <div class="seg-cell">
-        <input class="seg-name-input" type="text" value="${name}" placeholder="Nome do segmento"
-          oninput="setSegName(${idx},this.value)">
-      </div>`;
+      <div class="seg-cell"><input class="seg-name-input" type="text" value="${name}" placeholder="Nome do segmento" oninput="setSegName(${idx},this.value)"></div>`;
     segYears.forEach(year => {
       const segs = histSegments[year] || [];
-      const s = segs.find(s => s.name === name);
-      const val = s ? s.revenue : '';
-      html += `<div class="seg-cell">
-        <input class="seg-val-input" type="number" step="any" value="${val!==''?val:''}" placeholder="—"
-          oninput="setSegVal('${name}',${year},this.value)">
-      </div>`;
+      const s    = segs.find(s=>s.name===name);
+      const val  = s ? s.revenue : '';
+      html += `<div class="seg-cell"><input class="seg-val-input" type="number" step="any" value="${val!==''?val:''}" placeholder="—" oninput="setSegVal('${name}',${year},this.value)"></div>`;
     });
-    html += `<div class="seg-cell">
-        <button onclick="removeSegRow(${idx})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0 4px" title="Remover">&times;</button>
-      </div>
-    </div>`;
+    html += `<div class="seg-cell"><button onclick="removeSegRow(${idx})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0 4px">&times;</button></div></div>`;
   });
 
   html += `<button class="add-seg-btn" onclick="addSegRow()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Adicionar segmento
-    </button>
-  </div>`;
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Adicionar segmento</button></div>`;
 
   return html;
 }
 
+// ── State setters ────────────────────────────────────────
 function setHistVal(year, field, rawVal, isPct) {
   if (!histData[year]) histData[year] = {};
-  if (rawVal === '' || rawVal == null) { histData[year][field] = null; return; }
-  let val = parseFloat(rawVal);
+  if (rawVal===''||rawVal==null) { histData[year][field]=null; return; }
+  const val = parseFloat(rawVal);
   if (isNaN(val)) return;
-  histData[year][field] = isPct ? val / 100 : val;
+  histData[year][field] = isPct ? val/100 : val;
 }
 
 function toggleSegYear(year, checked) {
-  if (checked && !segYears.includes(year)) {
-    segYears = [...segYears, year].sort((a,b)=>b-a);
-  } else if (!checked) {
-    segYears = segYears.filter(y => y !== year);
-  }
+  if (checked && !segYears.includes(year)) segYears = [...segYears,year].sort((a,b)=>b-a);
+  else if (!checked) segYears = segYears.filter(y=>y!==year);
   document.getElementById('hist-body').innerHTML = buildHistBody();
 }
 
 function addSegRow() {
   segYears.forEach(y => {
-    if (!histSegments[y]) histSegments[y] = [];
-    histSegments[y].push({ name: '', revenue: null, sort_order: histSegments[y].length });
+    if (!histSegments[y]) histSegments[y]=[];
+    histSegments[y].push({ name:'', revenue:null, sort_order:histSegments[y].length });
   });
   document.getElementById('hist-body').innerHTML = buildHistBody();
 }
 
 function removeSegRow(idx) {
   const nameEl = document.querySelectorAll('[data-seg-idx="'+idx+'"] .seg-name-input')[0];
-  const name = nameEl ? nameEl.value : '';
-  segYears.forEach(y => {
-    if (histSegments[y]) histSegments[y] = histSegments[y].filter(s => s.name !== name);
-  });
+  const name   = nameEl ? nameEl.value : '';
+  segYears.forEach(y => { if(histSegments[y]) histSegments[y]=histSegments[y].filter(s=>s.name!==name); });
   document.getElementById('hist-body').innerHTML = buildHistBody();
 }
 
 function setSegName(idx, newName) {
-  // Update name across all years
   segYears.forEach(y => {
-    if (!histSegments[y]) histSegments[y] = [];
-    if (!histSegments[y][idx]) histSegments[y][idx] = { name:'', revenue:null, sort_order:idx };
+    if (!histSegments[y]) histSegments[y]=[];
+    if (!histSegments[y][idx]) histSegments[y][idx]={name:'',revenue:null,sort_order:idx};
     histSegments[y][idx].name = newName;
   });
 }
 
 function setSegVal(segName, year, rawVal) {
-  if (!histSegments[year]) histSegments[year] = [];
-  let seg = histSegments[year].find(s => s.name === segName);
-  if (!seg) { seg = { name:segName, revenue:null, sort_order:histSegments[year].length }; histSegments[year].push(seg); }
-  seg.revenue = rawVal !== '' ? parseFloat(rawVal) : null;
+  if (!histSegments[year]) histSegments[year]=[];
+  let seg = histSegments[year].find(s=>s.name===segName);
+  if (!seg) { seg={name:segName,revenue:null,sort_order:histSegments[year].length}; histSegments[year].push(seg); }
+  seg.revenue = rawVal!==''?parseFloat(rawVal):null;
 }
 
+// ── Save ─────────────────────────────────────────────────
 async function saveHistorico() {
-  if (!histAssetId) { toast('Seleciona um ativo primeiro', 'error'); return; }
+  if (!histAssetId) { toast('Seleciona um ativo primeiro','error'); return; }
 
-  // Read all current input values from DOM before saving
+  // Collect DOM values
   document.querySelectorAll('.ag-input').forEach(inp => {
-    const year  = parseInt(inp.dataset.year);
-    const field = inp.dataset.field;
-    const isPct = inp.dataset.pct === 'true';
-    const raw   = inp.value;
-    setHistVal(year, field, raw, isPct);
+    setHistVal(parseInt(inp.dataset.year), inp.dataset.field, inp.value, inp.dataset.pct==='true');
   });
   document.querySelectorAll('[data-seg-idx]').forEach(row => {
     const idx     = parseInt(row.dataset.segIdx);
     const nameInp = row.querySelector('.seg-name-input');
     const name    = nameInp ? nameInp.value.trim() : '';
     if (!name) return;
-    row.querySelectorAll('.seg-val-input').forEach((inp, i) => {
+    row.querySelectorAll('.seg-val-input').forEach((inp,i) => {
       const year = segYears[i];
-      if (!year) return;
-      setSegVal(name, year, inp.value);
+      if (year) setSegVal(name, year, inp.value);
     });
   });
 
   let errors = 0;
 
-  // Upsert annual data
   for (const [yearStr, data] of Object.entries(histData)) {
     const year = parseInt(yearStr);
-    const hasData = Object.entries(data).some(([k,v]) => v != null && k !== 'id' && k !== 'asset_id' && k !== 'fiscal_year' && k !== 'created_at' && k !== 'updated_at');
+    const hasData = Object.entries(data).some(([k,v])=>v!=null&&!['id','asset_id','fiscal_year','created_at','updated_at'].includes(k));
     if (!hasData) continue;
-
-    const payload = { asset_id: histAssetId, fiscal_year: year, ...data };
+    const payload = { asset_id:histAssetId, fiscal_year:year, ...data };
     delete payload.id; delete payload.created_at; delete payload.updated_at;
-
-    const { error } = await sb.from('asset_annual_data').upsert(payload, { onConflict: 'asset_id,fiscal_year' });
+    const { error } = await sb.from('asset_annual_data').upsert(payload, { onConflict:'asset_id,fiscal_year' });
     if (error) { console.error(error); errors++; }
   }
 
-  // Upsert segments
   for (const [yearStr, segs] of Object.entries(histSegments)) {
     const year = parseInt(yearStr);
-    for (let i = 0; i < segs.length; i++) {
+    for (let i=0;i<segs.length;i++) {
       const s = segs[i];
       if (!s.name) continue;
       const { error } = await sb.from('asset_segments').upsert({
-        asset_id: histAssetId, fiscal_year: year,
-        segment_name: s.name, revenue: s.revenue, sort_order: i
-      }, { onConflict: 'asset_id,fiscal_year,segment_name' });
+        asset_id:histAssetId, fiscal_year:year, segment_name:s.name, revenue:s.revenue, sort_order:i
+      }, { onConflict:'asset_id,fiscal_year,segment_name' });
       if (error) { console.error(error); errors++; }
     }
   }
 
-  if (errors === 0) toast('Dados guardados com sucesso!', 'success');
-  else toast(errors + ' erro(s) ao guardar. Verifica a consola.', 'error');
+  if (errors===0) toast('Dados guardados!','success');
+  else toast(errors+' erro(s). Verifica a consola.','error');
 }
 function renderHoldings() {
   const hMap = {};
