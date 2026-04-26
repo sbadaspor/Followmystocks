@@ -1092,37 +1092,6 @@ function handleHistInput(year, field, rawVal, isPct, inputEl) {
   }, 80);
 }
 
-  setTimeout(() => {
-    const cols = getVisibleYears();
-    cols.forEach((y, ci) => {
-      const inp = document.querySelector('.ag-input[data-year="'+y+'"][data-field="'+field+'"]');
-      if (!inp) return;
-      const td = inp.parentElement;
-      const oldGrowth = td.querySelector('div');
-      const row     = histData[y] || {};
-      const rowPrev = histData[cols[ci+1]] || {};
-      const val  = row[field];
-      const prev = rowPrev[field];
-      if (oldGrowth) oldGrowth.remove();
-      if (val != null && prev != null && prev !== 0) {
-        const gr  = (val - prev) / Math.abs(prev) * 100;
-        const pos = gr >= 0;
-        const invertGood = field === 'shares_outstanding';
-        const isGood = invertGood ? !pos : pos;
-        const div = document.createElement('div');
-        div.style.cssText = 'font-size:9.5px;font-weight:600;color:'+(isGood?'var(--green)':'var(--red)')+';margin-top:1px;text-align:right';
-        div.textContent = (pos?'+':'') + gr.toFixed(1) + '%';
-        td.appendChild(div);
-      }
-    });
-    // Refresh summary block
-    const fields = histView === 'income'
-      ? [...INCOME_FIELDS, ...customIncomeFields]
-      : [...RATIO_FIELDS,  ...customRatioFields];
-    const summaryEl = document.getElementById('summary-block');
-    if (summaryEl) summaryEl.innerHTML = buildSummaryBlock(fields);
-  }, 80);
-}
 
 // ── Custom fields ────────────────────────────────────────
 function addCustomField(section) {
