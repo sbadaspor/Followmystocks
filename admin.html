@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin — Follow Stocks</title>
+  <title>V — Visa Inc. · Follow Stocks</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
       --bg:      #f5f5fa;
       --card:    #ffffff;
@@ -20,1789 +20,1506 @@
       --muted:   #9999b0;
       --green:   #0a9955;
       --red:     #d92d48;
+      --blue:    #3b6fdd;
       --amber:   #c47e00;
+      --teal:    #007d66;
+      --purple:  #7c5fcf;
       --accent:  #5344e8;
     }
-    body { background:var(--bg); color:var(--text); font-family:'Outfit',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased; }
 
-    /* LOGIN */
-    #login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at 50% 0%,rgba(97,83,245,.06) 0%,transparent 60%); }
-    .login-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:40px 36px; width:360px; text-align:center; }
-    .login-mark { width:44px; height:44px; background:var(--accent); border-radius:12px; display:inline-flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; color:#fff; margin-bottom:18px; }
-    .login-card h1 { font-size:20px; font-weight:600; letter-spacing:-.01em; margin-bottom:4px; }
-    .login-card p  { font-size:13px; color:var(--dim); margin-bottom:28px; }
-    .pwd-wrap { position:relative; margin-bottom:12px; }
-    .pwd-wrap input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 40px 12px 14px; color:var(--text); font-family:'Outfit',sans-serif; font-size:14px; outline:none; transition:border-color .15s; }
-    .pwd-wrap input:focus { border-color:var(--accent); }
-    .pwd-toggle { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--muted); display:flex; align-items:center; }
-    .login-btn { width:100%; padding:12px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-family:'Outfit',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:opacity .15s; }
-    .login-btn:hover { opacity:.9; }
-    .login-error { font-size:12px; color:var(--red); margin-top:10px; min-height:18px; }
-
-    /* HEADER */
-    #dashboard { display:none; min-height:100vh; }
-    .admin-header { height:52px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:rgba(255,255,255,.98); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; backdrop-filter:blur(20px); }
-    .admin-brand { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; }
-    .admin-mark { width:26px; height:26px; background:var(--accent); border-radius:7px; display:grid; place-items:center; font-size:12px; font-weight:700; color:#fff; }
-    .admin-badge { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.09em; color:var(--dim); background:rgba(0,0,0,.04); border:1px solid var(--border); padding:2px 8px; border-radius:99px; }
-    .header-right { display:flex; align-items:center; gap:10px; }
-    .logout-btn { font-size:12px; color:var(--dim); background:none; border:1px solid var(--border); border-radius:7px; padding:5px 12px; cursor:pointer; font-family:'Outfit',sans-serif; transition:all .15s; }
-    .logout-btn:hover { color:var(--text); }
-    a.back-link { font-size:12px; color:var(--dim); text-decoration:none; display:flex; align-items:center; gap:5px; transition:color .15s; }
-    a.back-link:hover { color:var(--text); }
-
-    /* LAYOUT */
-    .admin-layout { display:flex; min-height:calc(100vh - 52px); }
-    .sidebar { width:220px; flex-shrink:0; padding:20px 12px; border-right:1px solid var(--border); display:flex; flex-direction:column; gap:2px; }
-    .sidebar-section { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); padding:0 8px; margin:12px 0 6px; }
-    .sidebar-section:first-child { margin-top:0; }
-    .nav-item { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:8px; border:none; background:transparent; color:var(--dim); font-family:'Outfit',sans-serif; font-size:13px; font-weight:500; cursor:pointer; width:100%; text-align:left; transition:all .15s; }
-    .nav-item:hover { color:var(--text); background:rgba(0,0,0,.03); }
-    .nav-item.active { color:var(--text); background:rgba(97,83,245,.10); }
-    .content { flex:1; padding:28px; overflow-y:auto; }
-
-    /* PAGE HEADER */
-    .page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
-    .page-title { font-size:18px; font-weight:600; letter-spacing:-.01em; }
-    .page-sub { font-size:13px; color:var(--muted); margin-top:2px; }
-
-    /* BUTTONS */
-    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:9px; font-family:'Outfit',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; transition:all .15s; }
-    .btn-primary   { background:var(--accent); color:#fff; }
-    .btn-primary:hover { opacity:.9; }
-    .btn-secondary { background:var(--card2); border:1px solid var(--border); color:var(--dim); }
-    .btn-secondary:hover { color:var(--text); border-color:var(--border-h); }
-    .btn-danger    { background:rgba(217,45,72,.10); border:1px solid rgba(217,45,72,.22); color:var(--red); }
-    .btn-danger:hover { background:rgba(217,45,72,.16); }
-    .btn-sm   { padding:5px 11px; font-size:12px; border-radius:7px; }
-
-    /* STATS */
-    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
-    .stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
-    .stat-lbl { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); margin-bottom:10px; }
-    .stat-val { font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:500; letter-spacing:-.02em; }
-    .stat-sub { font-size:12px; color:var(--muted); margin-top:4px; }
-
-    /* TABLE */
-    .table-wrap { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
-    table { width:100%; border-collapse:collapse; }
-    thead tr { border-bottom:1px solid var(--border); }
-    th { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); padding:12px 16px; text-align:left; white-space:nowrap; }
-    tbody tr { border-bottom:1px solid var(--border); transition:background .12s; }
-    tbody tr:last-child { border-bottom:none; }
-    tbody tr:hover { background:rgba(0,0,0,.02); }
-    td { padding:13px 16px; font-size:13px; vertical-align:middle; }
-    .td-mono { font-family:'JetBrains Mono',monospace; font-size:12.5px; }
-    .td-dim  { color:var(--dim); }
-    .td-actions { display:flex; gap:6px; justify-content:flex-end; }
-
-    /* TAGS */
-    .tag { display:inline-flex; align-items:center; padding:2px 8px; border-radius:5px; font-size:11px; font-weight:500; border:1px solid var(--border); background:rgba(0,0,0,.03); color:var(--dim); }
-    .tag.green { background:rgba(10,153,85,.08); border-color:rgba(10,153,85,.22); color:var(--green); }
-    .tag.amber { background:rgba(196,126,0,.08);  border-color:rgba(196,126,0,.22);  color:var(--amber); }
-
-    /* MODAL */
-    .modal-overlay { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
-    .modal-overlay.open { display:flex; }
-    .modal { background:var(--card); border:1px solid var(--border-h); border-radius:16px; padding:28px; width:500px; max-height:90vh; overflow-y:auto; }
-    .modal-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
-    .modal-title { font-size:16px; font-weight:600; }
-    .modal-close { width:28px; height:28px; border-radius:7px; border:1px solid var(--border); background:transparent; color:var(--dim); cursor:pointer; display:grid; place-items:center; font-size:16px; transition:all .15s; }
-    .modal-close:hover { color:var(--text); }
-
-    /* FORM */
-    .form-group { margin-bottom:16px; }
-    .form-row   { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    label { display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px; }
-    input[type="text"], input[type="number"], input[type="date"], select {
-      width:100%; background:var(--bg); border:1px solid var(--border); border-radius:9px;
-      padding:10px 12px; color:var(--text); font-family:'Outfit',sans-serif; font-size:13.5px; outline:none; transition:border-color .15s; appearance:none;
-    }
-    input:focus, select:focus { border-color:var(--accent); }
-    input::placeholder { color:var(--muted); }
-    input:disabled { opacity:.5; }
-    .input-with-btn { display:flex; gap:8px; }
-    .input-with-btn input { flex:1; }
-    .form-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:22px; padding-top:18px; border-top:1px solid var(--border); }
-
-    .fetch-result { background:rgba(10,153,85,.06); border:1px solid rgba(10,153,85,.18); border-radius:8px; padding:10px 12px; margin-top:8px; font-size:12.5px; display:none; }
-    .fetch-error  { background:rgba(217,45,72,.06);  border:1px solid rgba(217,45,72,.16);  border-radius:8px; padding:10px 12px; margin-top:8px; font-size:12.5px; color:var(--red); display:none; }
-
-    /* TOAST */
-    #toast { position:fixed; bottom:24px; right:24px; background:var(--card); border:1px solid var(--border-h); border-radius:10px; padding:12px 18px; font-size:13px; box-shadow:0 8px 32px rgba(0,0,0,.5); transform:translateY(80px); opacity:0; transition:all .3s; z-index:2000; display:flex; align-items:center; gap:8px; }
-    #toast.show { transform:translateY(0); opacity:1; }
-    #toast.success { border-color:rgba(15,224,122,.35); color:var(--green); }
-    #toast.error   { border-color:rgba(255,61,88,.35);  color:var(--red); }
-
-    .empty { text-align:center; padding:48px 20px; color:var(--muted); font-size:13px; }
-    .empty p:first-child { font-size:15px; margin-bottom:6px; color:var(--dim); }
-    .pos { color:var(--green); }
-    .neg { color:var(--red); }
-    select option { background:#ffffff; }
-
-    /* HISTORICAL DATA */
-    .hist-asset-selector {
-      display:flex; align-items:center; gap:12px; margin-bottom:24px;
-      background:var(--card); border:1px solid var(--border);
-      border-radius:12px; padding:16px 20px;
-    }
-    .hist-asset-selector label { margin-bottom:0; white-space:nowrap; }
-    .hist-asset-selector select { max-width:280px; }
-
-    .hist-tabs {
-      display:flex; gap:2px; margin-bottom:20px;
-      background:var(--card2); border:1px solid var(--border);
-      border-radius:10px; padding:4px; width:fit-content;
-    }
-    .hist-tab {
-      padding:7px 16px; border-radius:7px; border:none;
-      background:transparent; color:var(--dim);
-      font-family:'Outfit',sans-serif; font-size:13px; font-weight:500;
-      cursor:pointer; transition:all .15s;
-    }
-    .hist-tab:hover { color:var(--text); }
-    .hist-tab.active { background:var(--card); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.08); }
-
-    /* Annual data grid */
-    .annual-grid-wrap { overflow-x:auto; }
-
-    .annual-grid {
-      display:grid;
-      min-width:900px;
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .ag-header {
-      display:contents;
+    /* ── TOPBAR ─────────────────────────────── */
+    .topbar {
+      height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+      background: rgba(255,255,255,.98);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(20px);
     }
 
-    .ag-row {
-      display:contents;
+    .back-btn {
+      display: flex; align-items: center; gap: 7px;
+      color: var(--dim); text-decoration: none;
+      font-size: 13px; font-weight: 500; transition: color .15s;
+    }
+    .back-btn:hover { color: var(--text); }
+
+    .topbar-tags { display: flex; gap: 6px; }
+
+    .tag {
+      font-size: 10px; font-weight: 600; padding: 3px 9px;
+      border-radius: 99px; border: 1px solid var(--border);
+      color: var(--dim); background: rgba(0,0,0,.03);
+      text-transform: uppercase; letter-spacing: .06em;
+    }
+    .tag.sector { color: var(--blue); border-color: rgba(107,163,255,.25); background: rgba(107,163,255,.07); }
+    .tag.country { color: var(--amber); border-color: rgba(245,183,49,.25); background: rgba(245,183,49,.07); }
+
+    /* ── MAIN ───────────────────────────────── */
+    main { max-width: 1400px; margin: 0 auto; padding: 36px 40px 100px; }
+
+    /* ── HERO ───────────────────────────────── */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      margin-bottom: 28px;
+      align-items: end;
     }
 
-    .ag-cell {
-      padding:9px 10px;
-      border-bottom:1px solid var(--border);
-      font-size:12.5px;
-      display:flex; align-items:center;
+    .hero-ticker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px; font-weight: 600;
+      color: var(--accent);
+      letter-spacing: .06em;
+      margin-bottom: 6px;
     }
 
-    .ag-cell.label {
-      font-size:12px; color:var(--dim); font-weight:500;
-      padding-left:0; background:var(--card2);
-      position:sticky; left:0; z-index:1;
-      border-right:1px solid var(--border);
+    .hero-name {
+      font-size: 40px; font-weight: 600;
+      letter-spacing: -.025em;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #e4e4f0 0%, #8888a0 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
 
-    .ag-cell.section-header {
-      font-size:9px; font-weight:700; text-transform:uppercase;
-      letter-spacing:.09em; color:var(--muted); background:var(--bg);
-      border-bottom:1px solid var(--border);
-      grid-column:1/-1; padding:10px 10px 6px;
+    .hero-desc {
+      font-size: 13px; color: var(--dim); line-height: 1.6;
+      max-width: 560px;
     }
 
-    .ag-input {
-      width:100%; background:transparent; border:none; outline:none;
-      font-family:'JetBrains Mono',monospace; font-size:12px;
-      color:var(--text); text-align:right; padding:2px 4px;
-      border-radius:4px; transition:background .15s;
-    }
-    .ag-input:focus { background:rgba(83,68,232,.07); }
-    .ag-input::placeholder { color:var(--muted); }
+    .hero-price-block { text-align: right; }
 
-    .ag-year-hdr {
-      padding:10px; font-size:11px; font-weight:700;
-      text-transform:uppercase; letter-spacing:.07em;
-      color:var(--dim); text-align:center;
-      border-bottom:2px solid var(--border);
-      background:var(--card);
+    .live-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 42px; font-weight: 500;
+      letter-spacing: -.03em;
+      margin-bottom: 4px;
     }
 
-    .year-col-hdr {
-      padding:8px 10px; font-size:11px; font-weight:700;
-      letter-spacing:.04em; color:var(--text); text-align:center;
-      background:var(--card); border-bottom:2px solid var(--border);
-      position:sticky; top:0;
+    .live-change {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px; font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .live-change.pos { color: var(--green); }
+    .live-change.neg { color: var(--red); }
+
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 9px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .12em; color: var(--green);
+    }
+    .live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+    /* ── INTRINSIC VALUE BANNER ─────────────── */
+    .intrinsic-banner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
     }
 
-    /* Segments table */
-    .seg-editor {
-      background:var(--card); border:1px solid var(--border);
-      border-radius:12px; overflow:hidden; margin-top:0;
+    .intr-card {
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    .seg-row {
-      display:grid;
-      grid-template-columns:240px repeat(var(--seg-years,1),120px) 40px;
-      border-bottom:1px solid var(--border);
+    .intr-card.base {
+      background: rgba(97,83,245,.06);
+      border: 1px solid rgba(97,83,245,.20);
     }
-    .seg-row:last-child { border-bottom:none; }
-    .seg-row.header { background:var(--card2); }
 
-    .seg-cell {
-      padding:10px 12px; font-size:12.5px;
-      border-right:1px solid var(--border);
-      display:flex; align-items:center;
+    .intr-card.disc {
+      background: rgba(10,153,85,.05);
+      border: 1px solid rgba(10,153,85,.18);
     }
-    .seg-cell:last-child { border-right:none; justify-content:center; }
-    .seg-cell.header { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
 
-    .seg-name-input {
-      width:100%; background:transparent; border:none; outline:none;
-      font-family:'Outfit',sans-serif; font-size:12.5px; color:var(--text);
-      padding:0;
+    .intr-lbl {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--dim); margin-bottom: 4px;
     }
-    .seg-val-input {
-      width:100%; background:transparent; border:none; outline:none;
-      font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text);
-      text-align:right; padding:0;
-    }
-    .seg-val-input::placeholder, .seg-name-input::placeholder { color:var(--muted); }
 
-    .add-seg-btn {
-      display:flex; align-items:center; gap:6px;
-      padding:10px 16px; font-size:12.5px; color:var(--dim);
-      background:none; border:none; cursor:pointer;
-      font-family:'Outfit',sans-serif; transition:color .15s;
-      width:100%; border-top:1px solid var(--border);
+    .intr-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 26px; font-weight: 600;
     }
-    .add-seg-btn:hover { color:var(--accent); }
+
+    .intr-vs {
+      font-size: 11px; color: var(--muted); margin-top: 2px;
+    }
+
+    .intr-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; font-weight: 600;
+      padding: 4px 10px; border-radius: 99px;
+    }
+    .intr-badge.above { background: rgba(255,61,88,.12); color: var(--red); }
+    .intr-badge.below { background: rgba(15,224,122,.12); color: var(--green); }
+
+    /* ── CARD ───────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 26px 32px;
+      margin-bottom: 16px;
+    }
+
+    .card-hdr {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; margin-bottom: 20px;
+    }
+
+    .card-title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+    .card-sub   { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    /* ── KEY METRICS ────────────────────────── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .metric-cell {
+      background: var(--card);
+      padding: 16px 18px;
+    }
+
+    .metric-lbl {
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .09em;
+      color: var(--muted); margin-bottom: 8px;
+    }
+
+    .metric-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px; font-weight: 500;
+      letter-spacing: -.02em;
+    }
+
+    /* ── SUMMARY TABLE (averages) ───────────── */
+    .avg-table { width: 100%; border-collapse: collapse; }
+
+    .avg-table th {
+      font-size: 9.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .09em;
+      color: var(--muted); padding: 0 16px 14px 0;
+      text-align: right;
+    }
+    .avg-table th:first-child { text-align: left; padding-left: 0; }
+
+    .avg-table td {
+      padding: 11px 14px 11px 0;
+      border-top: 1px solid rgba(0,0,0,.07);
+      font-size: 13px; text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .avg-table td:first-child {
+      text-align: left; font-family: 'Outfit', sans-serif;
+      font-size: 13px; color: var(--dim); padding-left: 0;
+    }
+    .avg-table td.hi { color: var(--text); font-weight: 500; }
+
+    /* ── ANNUAL TABLE ───────────────────────── */
+    .annual-wrap { overflow-x: auto; }
+
+    .annual-table {
+      width: 100%; min-width: 900px;
+      border-collapse: collapse;
+    }
+
+    .annual-table th {
+      font-size: 9.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .09em;
+      color: var(--muted); padding: 0 10px 14px;
+      text-align: right; white-space: nowrap;
+    }
+    .annual-table th:first-child { text-align: left; padding-left: 0; min-width: 200px; }
+
+    .annual-table td {
+      padding: 9px 10px;
+      border-top: 1px solid rgba(0,0,0,.07);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px; text-align: right;
+      white-space: nowrap;
+    }
+    .annual-table td:first-child {
+      text-align: left;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px; color: var(--dim); padding-left: 0;
+    }
+
+    .annual-table tr.gr td {
+      padding-top: 1px; padding-bottom: 9px;
+      border-top: none; font-size: 10.5px;
+    }
+    .annual-table tr.gr td:first-child {
+      font-size: 11px; color: var(--muted);
+      padding-left: 12px;
+    }
+
+    .gu { color: var(--green) !important; }
+    .gd { color: var(--red) !important; }
+    .gn { color: var(--muted) !important; }
+
+    /* ── 2-COL CHARTS ───────────────────────── */
+    .charts-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .ch-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+    .ch-sub   { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+    .ch-wrap  { position: relative; height: 230px; }
+
+    .legend {
+      display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--dim);
+    }
+    .ld { width: 10px; height: 3px; border-radius: 2px; }
+
+    /* ── SEGMENT TABLE ──────────────────────── */
+    .seg-table { width: 100%; border-collapse: collapse; }
+    .seg-table th {
+      font-size: 9.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--muted); padding: 0 10px 14px;
+      text-align: right; white-space: nowrap;
+    }
+    .seg-table th:first-child { text-align: left; padding-left: 0; }
+    .seg-table td {
+      padding: 11px 10px;
+      border-top: 1px solid rgba(0,0,0,.07);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; text-align: right;
+    }
+    .seg-table td:first-child {
+      text-align: left; font-family: 'Outfit', sans-serif;
+      font-size: 13px; color: var(--dim); padding-left: 0;
+    }
+
+    .bar-cell { min-width: 120px; }
+    .bar-bg {
+      height: 5px; background: rgba(0,0,0,.05);
+      border-radius: 99px; overflow: hidden; margin-top: 4px;
+    }
+    .bar-fill {
+      height: 100%; border-radius: 99px;
+      background: var(--accent);
+    }
+
+    .pos { color: var(--green); }
+    .neg { color: var(--red); }
+
+    /* ── DESKTOP LAYOUT WITH SIDEBAR NAV ───── */
+    .page-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .side-nav {
+      position: sticky;
+      top: 72px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .side-nav-section {
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--muted); padding: 0 8px;
+      margin: 12px 0 4px;
+    }
+    .side-nav-section:first-child { margin-top: 0; }
+
+    .side-nav a {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; border-radius: 8px;
+      font-size: 12.5px; font-weight: 500;
+      color: var(--dim); text-decoration: none;
+      transition: all .15s;
+    }
+    .side-nav a:hover { color: var(--text); background: rgba(0,0,0,.05); }
+    .side-nav a.active { color: var(--accent); background: rgba(97,83,245,.08); font-weight: 600; }
+
+    .side-nav-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor; flex-shrink: 0; opacity: .5;
+    }
+
+    @media (max-width: 900px) {
+      .page-layout { grid-template-columns: 1fr; }
+      .side-nav { display: none; }
+    }
+
+    /* ── EXPANDABLE METRIC ROWS ────────────── */
+    .metric-row { cursor: pointer; transition: background .12s; }
+    .metric-row:hover { background: rgba(83,68,232,.04) !important; }
+    .metric-row td:first-child { position: relative; }
+    .expand-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 4px;
+      background: rgba(83,68,232,.1); color: var(--accent);
+      font-size: 9px; margin-right: 7px; transition: transform .2s, background .15s;
+      flex-shrink: 0; vertical-align: middle;
+    }
+    .metric-row.expanded .expand-icon { transform: rotate(90deg); background: rgba(83,68,232,.2); }
+    .history-row td { padding: 0 !important; border-bottom: 2px solid rgba(83,68,232,.3) !important; }
+    .history-inner {
+      background: rgba(83,68,232,.025); border-top: 1px solid rgba(83,68,232,.1);
+      overflow-x: auto; padding: 0;
+    }
+    .history-inner table { min-width: 500px; border-collapse: collapse; width: 100%; }
+    .history-inner th {
+      padding: 9px 12px; font-size: 9.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+      text-align: right; white-space: nowrap;
+      background: rgba(83,68,232,.05); border-bottom: 1px solid var(--border);
+    }
+    .history-inner th:first-child { text-align: left; }
+    .history-inner td {
+      padding: 9px 12px; text-align: right;
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      border-bottom: 1px solid rgba(0,0,0,.04);
+      color: var(--text);
+    }
+    .history-inner td:first-child { text-align: left; font-weight: 700; min-width: 60px; }
+    .history-inner tr:last-child td { border-bottom: none; }
+
+    /* ── SEGMENT TOOLTIPS ───────────────────── */
+    .seg-tooltip-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: default; }
+    .seg-info-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 15px; height: 15px; border-radius: 50%;
+      background: rgba(83,68,232,.12); border: none; cursor: help;
+      font-size: 8px; font-weight: 800; color: var(--accent); flex-shrink: 0;
+    }
+    .seg-tooltip {
+      visibility: hidden; opacity: 0; pointer-events: none;
+      position: absolute; left: 0; top: calc(100% + 8px);
+      background: #1e1b4b; color: #e0e7ff;
+      font-size: 12px; line-height: 1.65; font-family: 'Outfit', sans-serif; font-weight: 400;
+      padding: 12px 16px; border-radius: 10px; width: 300px; z-index: 200;
+      box-shadow: 0 8px 28px rgba(0,0,0,.25);
+      transition: opacity .18s, visibility .18s;
+    }
+    .seg-tooltip::before {
+      content: ''; position: absolute; bottom: 100%; left: 14px;
+      border: 5px solid transparent; border-bottom-color: #1e1b4b;
+    }
+    .seg-tooltip-wrap:hover .seg-tooltip { visibility: visible; opacity: 1; }
   </style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-mark">F</div>
-    <h1>Follow Stocks</h1>
-    <p>Área de administração · acesso restrito</p>
-    <div class="pwd-wrap">
-      <input type="password" id="pwd-input" placeholder="Password de acesso" onkeydown="if(event.key==='Enter')doLogin()">
-      <button class="pwd-toggle" onclick="togglePwd()">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      </button>
-    </div>
-    <button class="login-btn" onclick="doLogin()">Entrar</button>
-    <p class="login-error" id="login-error"></p>
+<div class="topbar">
+  <a href="index.html" class="back-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+    Voltar
+  </a>
+  <div class="topbar-tags">
+    <span class="tag sector">Financial Services</span>
+    <span class="tag country">USA · NYSE</span>
+    <span class="tag">Fiscal Year: Set</span>
   </div>
 </div>
 
-<!-- DASHBOARD -->
-<div id="dashboard">
-  <div class="admin-header">
-    <div class="admin-brand">
-      <div class="admin-mark">F</div>
-      Follow Stocks
-      <span class="admin-badge">Admin</span>
+<main>
+
+  <!-- HERO (full width above layout) -->
+  <div class="hero">
+    <div>
+      <div class="hero-ticker">V · VISA INC.</div>
+      <h1 class="hero-name">Visa Inc.</h1>
+      <p class="hero-desc">A Visa não é um banco nem emite cartões — é a "autoestrada" por onde a informação do dinheiro circula. Opera a maior rede global de pagamentos digitais, ligando consumidores, comerciantes, instituições financeiras e governos.</p>
     </div>
-    <div class="header-right">
-      <a href="index.html" class="back-link">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
-        Ver site
-      </a>
-      <button class="logout-btn" onclick="doLogout()">Sair</button>
+    <div class="hero-price-block">
+      <div class="live-price" id="live-price">— €</div>
+      <div class="live-change" id="live-change">—</div>
+      <div class="live-badge"><div class="live-dot"></div> EM TEMPO REAL</div>
     </div>
   </div>
 
-  <div class="admin-layout">
-    <nav class="sidebar">
-      <div class="sidebar-section">Principal</div>
-      <button class="nav-item active" onclick="showTab('overview',this)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="7" height="9" rx="1"/><rect x="15" y="12" width="7" height="9" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/></svg>
-        Visão Geral
-      </button>
-      <div class="sidebar-section">Gestão</div>
-      <button class="nav-item" onclick="showTab('assets',this)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
-        Ativos
-      </button>
-      <button class="nav-item" onclick="showTab('holdings',this)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-        Carteira
-      </button>
-      <button class="nav-item" onclick="showTab('historico',this)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Dados Históricos
-      </button>
-    </nav>
+  <div class="page-layout">
 
-    <div class="content" id="tab-content">
-      <div style="color:var(--muted);font-size:13px">A carregar...</div>
+  <!-- SIDEBAR NAV -->
+  <aside class="side-nav">
+    <div class="side-nav-section">Visão Geral</div>
+    <a href="#intrinsic"><div class="side-nav-dot"></div>Valor Intrínseco</a>
+    <a href="#metrics"><div class="side-nav-dot"></div>Key Metrics</a>
+    <div class="side-nav-section">Crescimento</div>
+    <a href="#dados-gerais"><div class="side-nav-dot"></div>Dados Gerais</a>
+    <a href="#racios"><div class="side-nav-dot"></div>Rácios e Margens</a>
+    <div class="side-nav-section">Histórico</div>
+    <a href="#charts-rev"><div class="side-nav-dot"></div>Receita & EPS</a>
+    <a href="#charts-margins"><div class="side-nav-dot"></div>Margens & ROIC</a>
+    <a href="#dividends"><div class="side-nav-dot"></div>Dividendos</a>
+    <a href="#fcf"><div class="side-nav-dot"></div>Free Cash Flow</a>
+    <div class="side-nav-section">Detalhe</div>
+    <a href="#annual"><div class="side-nav-dot"></div>Detalhes Anuais</a>
+    <a href="#segments"><div class="side-nav-dot"></div>Segmentos</a>
+    <a href="#ratios-annual"><div class="side-nav-dot"></div>Rácios Anuais</a>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div>
+
+  <div id="intrinsic"></div>
+  <!-- INTRINSIC VALUE -->
+  <div class="intrinsic-banner">
+    <div class="intr-card base">
+      <div>
+        <div class="intr-lbl">Valor Intrínseco (Graham) *</div>
+        <div class="intr-val" style="color:var(--accent)">272,71 $</div>
+        <div class="intr-vs">L=8.58 · g=10.92% · Y=4.2</div>
+      </div>
+      <div class="intr-badge above" id="badge-base">—</div>
+    </div>
+    <div class="intr-card disc">
+      <div>
+        <div class="intr-lbl">Com margem de segurança (−15%) *</div>
+        <div class="intr-val" style="color:var(--green)">231,80 $</div>
+        <div class="intr-vs">272,71 × 0,85</div>
+      </div>
+      <div class="intr-badge below" id="badge-disc">—</div>
     </div>
   </div>
-</div>
 
-<!-- MODAL: ASSET -->
-<div class="modal-overlay" id="asset-modal">
-  <div class="modal">
-    <div class="modal-hdr">
-      <div class="modal-title" id="asset-modal-title">Adicionar Ativo</div>
-      <button class="modal-close" onclick="closeAssetModal()">&#xD7;</button>
+  <!-- FORMULA FOOTNOTE -->
+  <div style="background:rgba(0,0,0,.02);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px;font-size:12px;color:var(--dim);line-height:1.8">
+    <span style="color:var(--text);font-weight:600">* Fórmula de Benjamin Graham:</span>
+    &nbsp;&nbsp;
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent)">V = L × (8,5 + 2g) × 4,4 / Y</span>
+    <br>
+    <span style="color:var(--muted)">
+      <b style="color:var(--dim)">L</b> = Média EPS últimos 3 anos = <b style="color:var(--text)">8,58 $</b> &nbsp;·&nbsp;
+      <b style="color:var(--dim)">g</b> = CAGR 3A receita = <b style="color:var(--text)">10,92%</b> &nbsp;·&nbsp;
+      <b style="color:var(--dim)">4,4</b> = constante de Graham &nbsp;·&nbsp;
+      <b style="color:var(--dim)">Y</b> = yield obrigações Tesouro EUA 20-30A = <b style="color:var(--text)">4,2%</b>
+      <br>
+      Margem de segurança de <b style="color:var(--text)">15%</b> aplicada ao valor base (× 0,85)
+    </span>
+  </div>
+
+  <div id="metrics"></div>
+  <!-- KEY METRICS -->
+  <div class="metrics-grid">
+    <div class="metric-cell">
+      <div class="metric-lbl">P/E TTM</div>
+      <div class="metric-val" id="kpi-pe">—</div>
     </div>
-    <input type="hidden" id="asset-id">
-    <div class="form-group">
-      <label>Ticker Yahoo Finance *</label>
-      <div class="input-with-btn">
-        <input type="text" id="f-ticker" placeholder="ex: AAPL, VWCE.DE, BTC-USD" style="text-transform:uppercase">
-        <button class="btn btn-secondary" onclick="verifyTicker()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          Verificar
-        </button>
-      </div>
-      <div class="fetch-result" id="fetch-result"></div>
-      <div class="fetch-error"  id="fetch-error"></div>
+    <div class="metric-cell">
+      <div class="metric-lbl">EPS TTM</div>
+      <div class="metric-val" id="kpi-eps">—</div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Nome *</label>
-        <input type="text" id="f-name" placeholder="Apple Inc.">
-      </div>
-      <div class="form-group">
-        <label>ISIN</label>
-        <input type="text" id="f-isin" placeholder="US0378331005">
-      </div>
+    <div class="metric-cell">
+      <div class="metric-lbl">EPS Next Y</div>
+      <div class="metric-val" style="color:var(--green)">14.54 $</div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Setor</label>
-        <select id="f-sector">
-          <option value="">&#x2014; Selecionar &#x2014;</option>
-          <option>Technology</option><option>Healthcare</option><option>Financials</option>
-          <option>Consumer Discretionary</option><option>Consumer Staples</option>
-          <option>Communication Services</option><option>Industrials</option>
-          <option>Energy</option><option>Materials</option><option>Real Estate</option>
-          <option>Utilities</option><option>Crypto</option><option>ETF</option><option>Outros</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Tipo</label>
-        <select id="f-type">
-          <option value="Stock">Stock</option><option value="ETF">ETF</option>
-          <option value="Crypto">Crypto</option><option value="Bond">Bond</option><option value="Outro">Outro</option>
-        </select>
-      </div>
+    <div class="metric-cell">
+      <div class="metric-lbl">Net Debt/EBITDA</div>
+      <div class="metric-val">1.83</div>
     </div>
-    <div class="form-actions">
-      <button class="btn btn-secondary" onclick="closeAssetModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveAsset()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        Guardar
-      </button>
+    <div class="metric-cell">
+      <div class="metric-lbl">Market Cap</div>
+      <div class="metric-val" id="kpi-mcap">—</div>
+    </div>
+    <div class="metric-cell">
+      <div class="metric-lbl">Beta</div>
+      <div class="metric-val" id="kpi-beta">—</div>
     </div>
   </div>
-</div>
 
-<!-- MODAL: HOLDING -->
-<div class="modal-overlay" id="holding-modal">
-  <div class="modal" style="width:420px">
-    <div class="modal-hdr">
-      <div class="modal-title" id="holding-modal-title">Editar Posição</div>
-      <button class="modal-close" onclick="closeHoldingModal()">&#xD7;</button>
-    </div>
-    <input type="hidden" id="h-asset-id">
-    <input type="hidden" id="h-holding-id">
-    <div class="form-group">
-      <label>Ativo</label>
-      <input type="text" id="h-asset-name" disabled>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>N&#xBA; de A&#xe7;&#xf5;es *</label>
-        <input type="number" id="h-shares" placeholder="0" min="0" step="0.0001">
-      </div>
-      <div class="form-group">
-        <label>Pre&#xe7;o M&#xe9;dio de Compra (&#x20ac;) *</label>
-        <input type="number" id="h-avg-price" placeholder="0.00" min="0" step="0.01">
+  <div id="dados-gerais"></div>
+  <!-- DADOS GERAIS -->
+  <div class="card">
+  <div id="dados-gerais"></div>
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="card-title">Dados Gerais</div>
+        <div class="card-sub">Clica em qualquer métrica para ver o histórico completo · Dados do Supabase</div>
       </div>
     </div>
-    <div class="form-group">
-      <label>Data da &#xda;ltima Compra</label>
-      <input type="date" id="h-date">
+    <div id="dados-gerais-wrap"><div style="color:var(--muted);font-size:13px;padding:16px 0">A carregar...</div></div>
+  </div>
+  <div id="racios"></div>
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="card-title">Rácios e Margens</div>
+        <div class="card-sub">Clica em qualquer rácio para ver o histórico completo</div>
+      </div>
     </div>
-    <div class="form-actions">
-      <button class="btn btn-danger btn-sm" id="h-delete-btn" onclick="deleteHolding()" style="display:none;margin-right:auto">Remover posi&#xe7;&#xe3;o</button>
-      <button class="btn btn-secondary" onclick="closeHoldingModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveHolding()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        Guardar
-      </button>
+    <div id="racios-wrap"><div style="color:var(--muted);font-size:13px;padding:16px 0">A carregar...</div></div>
+  </div>
+  <!-- CHARTS ROW 1: Revenue + EPS -->
+  <div class="charts-2">
+    <div class="card" style="margin-bottom:0">
+      <div class="ch-title">Receita Anual</div>
+      <div class="ch-sub">Últimos 14 anos · em mil milhões USD</div>
+      <div class="ch-wrap"><canvas id="rev-chart"></canvas></div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="ch-title">EPS Histórico</div>
+      <div class="ch-sub">Lucro por ação · USD</div>
+      <div class="ch-wrap"><canvas id="eps-chart"></canvas></div>
     </div>
   </div>
-</div>
 
-<div id="toast"></div>
+  <div id="charts-margins"></div>
+  <!-- CHARTS ROW 2 -->
+  <div class="charts-2">
+    <div class="card" style="margin-bottom:0">
+      <div class="ch-title">Margens ao Longo dos Anos</div>
+      <div class="ch-sub">Operacional e Líquida (%)</div>
+      <div class="ch-wrap"><canvas id="margins-chart"></canvas></div>
+      <div class="legend">
+        <div class="legend-item"><div class="ld" style="background:#6ba3ff"></div>Op. Margin</div>
+        <div class="legend-item"><div class="ld" style="background:#f5b731"></div>Net Margin</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="ch-title">ROIC ao Longo dos Anos</div>
+      <div class="ch-sub">Retorno sobre capital investido (%)</div>
+      <div class="ch-wrap"><canvas id="roic-chart"></canvas></div>
+    </div>
+  </div>
+
+  <div id="dividends"></div>
+  <!-- DIVIDENDS -->
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="ch-title">Dividendos por Ano</div>
+        <div class="ch-sub">Pagamento por ação (USD) · crescimento consistente</div>
+      </div>
+    </div>
+    <div class="ch-wrap" style="height:180px"><canvas id="div-chart"></canvas></div>
+  </div>
+
+  <div id="fcf"></div>
+  <!-- FCF -->
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="ch-title">Free Cash Flow</div>
+        <div class="ch-sub">Últimos 14 anos · em mil milhões USD</div>
+      </div>
+    </div>
+    <div class="ch-wrap" style="height:180px"><canvas id="fcf-chart"></canvas></div>
+  </div>
+
+  <div id="segments"></div>
+  <!-- SEGMENT REVENUE -->
+  <div id="segments"></div>
+  <div class="card">
+    <div class="card-hdr">
+      <div>
+        <div class="card-title">Receita por Segmento</div>
+        <div class="card-sub">Clica em qualquer segmento para ver histórico · ★ para descrição</div>
+      </div>
+    </div>
+    <table class="seg-table">
+      <thead><tr>
+        <th>Segmento</th>
+        <th>Receita (B $)</th>
+        <th>% do Total</th>
+        <th class="bar-cell">Visual</th>
+        <th>YoY</th>
+      </tr></thead>
+      <tbody id="seg-tbody"></tbody>
+    </table>
+  </div>
+
+  </div>
+  </div><!-- /.page-layout -->
+
+</main>
 
 <script>
-const SUPABASE_URL      = 'https://xzxnjifpgvshzlsxhags.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eG5qaWZwZ3ZzaHpsc3hoYWdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MDYzMjQsImV4cCI6MjA5MjQ4MjMyNH0.HlfyTZxvcPcPTR0yWCBUVU8vKm9ncaPVSqBW9LhJvE4';
-const ADMIN_PWD = '6qfO5CJ2@';
+// ── DATA ─────────────────────────────────────────────────
+const YEARS   = [2025,2024,2023,2022,2021,2020,2019,2018,2017,2016,2015,2014,2013,2012];
+const EPS     = [9.55,8.81,7.38,6.26,5.04,4.38,4.78,3.98,2.52,2.24,2.32,1.95,1.72,0.56];
+const EPS_GR  = [0.084,0.194,0.179,0.242,0.151,-0.084,0.201,0.579,0.125,-0.034,0.190,0.134,2.071,-0.371];
+const REV     = [40.0,35.926,32.653,29.31,24.105,21.846,22.977,20.609,18.358,15.082,13.88,12.702,11.778,10.421];
+const REV_GR  = [0.113,0.100,0.114,0.216,0.103,-0.049,0.115,0.123,0.217,0.087,0.093,0.078,0.130,0.134];
+const NET_INC = [20.058,19.743,17.273,14.957,12.311,10.866,12.08,10.301,6.699,5.991,6.328,5.438,4.98,2.144];
+const NET_GR  = [0.016,0.143,0.155,0.215,0.133,-0.100,0.173,0.538,0.118,-0.053,0.164,0.092,1.323,-0.413];
+const FCF     = [21.577,18.693,19.696,17.879,14.522,9.704,12.028,12.223,8.61,5.051,6.17,6.652,2.551,4.633];
+const FCF_GR  = [0.154,-0.051,0.102,0.231,0.496,-0.193,-0.016,0.420,0.705,-0.181,-0.072,1.608,-0.449,0.317];
+const EBITDA  = [25.214,24.629,21.943,19.674,16.608,14.848,15.657,13.556,12.7,8.385,9.558,10.724,9.957,4.627];
+const DIVS    = [2.44,2.15,1.87,1.575,1.335,1.22,1.05,0.88,0.69,0.585,0.5,0.42,0.3475,0.2475];
+const DIVS_GR = [0.135,0.150,0.187,0.180,0.094,0.162,0.193,0.275,0.179,0.170,0.190,0.209,0.404,0.478];
+const SHARES  = [2100,2242,2340,2391,2443,2479,2529,2586,2654,2678,2724,2894,2897,3865];
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let allAssets = [], allHoldings = [], currentTab = 'overview';
+const OP_M  = [0.5999,0.6568,0.6431,0.6419,0.6556,0.6446,0.6529,0.6286,0.6615,0.5227,0.653,0.606,0.6146,0.2053];
+const NET_M = [0.5015,0.5495,0.529,0.5103,0.5107,0.4974,0.5257,0.4998,0.3639,0.3972,0.4559,0.4281,0.4228,0.2057];
+const ROIC  = [0.3158,0.281,0.2917,0.2709,0.2033,0.2155,0.2124,0.2029,0.1353,0.1401,0.207,0.1839,0.1684,0.1915];
+const CUR_R = [1.0776,1.2834,1.4517,1.4485,1.7541,1.9052,1.5632,1.6113,1.9034,1.7789,1.8713,1.592,1.8044,1.4818];
+const LT_D  = [0.3408,0.3474,0.3457,0.3621,0.347,0.3679,0.3254,0.3284,0.3355,null,null,null,null,null];
+const DEBT_E= [0.664,0.5324,0.5283,0.631,0.5581,0.6647,0.4823,0.489,0.5607,0.4826,null,null,null,null];
 
-/* AUTH */
-function doLogin() {
-  const pwd = document.getElementById('pwd-input').value;
-  const errEl = document.getElementById('login-error');
-  errEl.textContent = '';
-  if (!pwd) { errEl.textContent = 'Introduz a password.'; return; }
-  if (pwd !== ADMIN_PWD) {
-    errEl.textContent = 'Password incorreta.';
-    document.getElementById('pwd-input').value = '';
-    return;
-  }
-  sessionStorage.setItem('fs-admin','1');
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-  loadData();
-}
-function doLogout() {
-  sessionStorage.removeItem('fs-admin');
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('pwd-input').value = '';
-}
-function togglePwd() { const i=document.getElementById('pwd-input'); i.type=i.type==='password'?'text':'password'; }
-if (sessionStorage.getItem('fs-admin')==='1') {
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('dashboard').style.display='block';
-  loadData();
-}
+const SEGS = {
+  'Service Revenue':           { vals:[17.539,16.114,14.826,13.361,11.475,9.804,9.700], pct:0.3146, yoy:0.0884 },
+  'Data Processing':           { vals:[19.993,17.714,16.007,14.438,12.792,10.975,10.333], pct:0.3586, yoy:0.1287 },
+  'International Transaction': { vals:[14.166,12.665,11.638,9.815,6.530,6.299,7.804], pct:0.2541, yoy:0.1185 },
+  'Other':                     { vals:[4.053,3.197,2.479,1.991,1.675,1.432,1.313], pct:0.0727, yoy:0.2678 },
+  'Client Incentives':         { vals:[-15.751,-13.704,-12.297,-10.295,-8.367,-6.664,-6.173], pct:null, yoy:0.1494 },
+};
 
-/* DATA */
-async function loadData() {
-  const [aRes,hRes] = await Promise.all([
-    sb.from('assets').select('*').order('name'),
-    sb.from('holdings').select('*'),
-  ]);
-  allAssets=aRes.data||[]; allHoldings=hRes.data||[];
-  renderCurrentTab();
-}
-function renderCurrentTab() {
-  if (currentTab==='overview') renderOverview();
-  else if (currentTab==='assets') renderAssets();
-  else if (currentTab==='holdings') renderHoldings();
-  else if (currentTab==='historico') renderHistorico();
-}
-function showTab(tab, btn) {
-  currentTab=tab;
-  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  renderCurrentTab();
+const SUPABASE_URL = 'https://xzxnjifpgvshzlsxhags.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eG5qaWZwZ3ZzaHpsc3hoYWdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MDYzMjQsImV4cCI6MjA5MjQ4MjMyNH0.HlfyTZxvcPcPTR0yWCBUVU8vKm9ncaPVSqBW9LhJvE4';
+const FINNHUB_KEY  = 'ct2affhr01qiurr3qhf0ct2affhr01qiurr3qhfg';
+
+// ── Chart.js defaults ─────────────────────────────────────
+Chart.defaults.color       = '#55556a';
+Chart.defaults.borderColor = 'rgba(0,0,0,.08)';
+Chart.defaults.font.family = "'Outfit', sans-serif";
+Chart.defaults.font.size   = 11;
+
+// ── Helpers ───────────────────────────────────────────────
+const fmtB  = v => v == null ? '—' : v.toFixed(2) + ' B';
+const fmtPct= v => v == null ? '—' : (v >= 0 ? '+' : '') + (v*100).toFixed(1) + '%';
+const fmtN  = (v,d=2) => v == null ? '—' : v.toFixed(d);
+const fmtD  = v => v == null ? '—' : v.toFixed(2) + ' $';
+
+function grClass(v) {
+  if (v == null) return 'gn';
+  return v > 0 ? 'gu' : v < 0 ? 'gd' : 'gn';
 }
 
-/* OVERVIEW */
-async function renderOverview() {
-  const holdings = allHoldings.filter(h=>+h.num_shares>0);
-  const invested = holdings.reduce((s,h)=>s+(+h.avg_price*+h.num_shares),0);
-  const wRes = await sb.from('watchlist').select('asset_id');
-  const watchedN = wRes.data?.length||0;
-  const lastUpdated = allAssets.reduce((latest, a) => {
-    if (!a.fundamentals_updated_at) return latest;
-    return !latest || a.fundamentals_updated_at > latest ? a.fundamentals_updated_at : latest;
-  }, null);
-
-  document.getElementById('tab-content').innerHTML = `
-    <div class="page-hdr">
-      <div><div class="page-title">Vis&#xe3;o Geral</div><div class="page-sub">Resumo da tua carteira</div></div>
-      <button class="btn btn-primary" onclick="showTab('assets',document.querySelectorAll('.nav-item')[1])">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Adicionar Ativo
-      </button>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-lbl">Total de Ativos</div><div class="stat-val">${allAssets.length}</div><div class="stat-sub">ativos registados</div></div>
-      <div class="stat-card"><div class="stat-lbl">Em Carteira</div><div class="stat-val pos">${holdings.length}</div><div class="stat-sub">com posi&#xe7;&#xe3;o aberta</div></div>
-      <div class="stat-card"><div class="stat-lbl">Seguidos</div><div class="stat-val" style="color:var(--amber)">${watchedN}</div><div class="stat-sub">na watchlist</div></div>
-      <div class="stat-card"><div class="stat-lbl">Total Investido</div><div class="stat-val">${fmtBig(invested)} &#x20ac;</div><div class="stat-sub">ao pre&#xe7;o m&#xe9;dio de compra</div></div>
-    </div>
-
-    <!-- FUNDAMENTAIS CARD -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div>
-          <div style="font-size:14px;font-weight:600">Fundamentais</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">
-            ${lastUpdated
-              ? 'Atualizado em ' + new Date(lastUpdated).toLocaleString('pt-PT')
-              : 'Ainda n&#xe3;o foram atualizados'}
-          </div>
-        </div>
-        <button class="btn btn-secondary" id="refresh-btn" onclick="refreshFundamentals()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-          Atualizar Fundamentais
-        </button>
-      </div>
-      <div id="refresh-progress" style="display:none">
-        <div style="height:4px;background:rgba(0,0,0,.05);border-radius:99px;overflow:hidden;margin-bottom:10px">
-          <div id="progress-bar" style="height:100%;background:var(--accent);border-radius:99px;width:0%;transition:width .4s"></div>
-        </div>
-        <div id="progress-text" style="font-size:12px;color:var(--dim)">A iniciar...</div>
-      </div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.6">
-        Clica em <b style="color:var(--dim)">Atualizar Fundamentais</b> para ir buscar P/E, EPS, margens, beta e outros dados de todos os ativos via Finnhub e guardá-los no Supabase.
-        Demora ~${Math.ceil(allAssets.length * 1.2 / 3 * 1.2 / 60)} min para ${allAssets.length} ativos. Faz isto 1x por semana.
-      </div>
-    </div>
-
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:14px">
-      <div style="font-size:14px;font-weight:600;margin-bottom:8px">Como usar o Admin</div>
-      <div style="font-size:13px;color:var(--dim);line-height:1.8">
-        <b style="color:var(--text)">1. Ativos</b> &mdash; Adiciona os ativos que queres acompanhar. O bot&#xe3;o <b>Verificar</b> preenche o nome via Finnhub.<br>
-        <b style="color:var(--text)">2. Carteira</b> &mdash; Define o n&#xba; de a&#xe7;&#xf5;es e pre&#xe7;o m&#xe9;dio para cada posi&#xe7;&#xe3;o.<br>
-        <b style="color:var(--text)">3. Fundamentais</b> &mdash; Clica em "Atualizar Fundamentais" acima. Os pre&#xe7;os live s&#xe3;o sempre autom&#xe1;ticos.
-      </div>
-    </div>
-    <div style="background:rgba(97,83,245,.06);border:1px solid rgba(97,83,245,.20);border-radius:12px;padding:16px 20px">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:6px">Setup SQL (necess&#xe1;rio uma vez)</div>
-      <div style="font-size:12px;color:var(--dim);line-height:1.6">
-        Corre <b style="color:var(--text)">supabase-admin-policies.sql</b> e <b style="color:var(--text)">supabase-fundamentals-migration.sql</b> no SQL Editor do Supabase.
-      </div>
-    </div>`;
-}
-
-/* REFRESH FUNDAMENTALS */
-async function refreshFundamentals() {
-  const btn = document.getElementById('refresh-btn');
-  const progressDiv = document.getElementById('refresh-progress');
-  const bar = document.getElementById('progress-bar');
-  const txt = document.getElementById('progress-text');
-
-  btn.disabled = true;
-  btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> A atualizar...';
-  progressDiv.style.display = 'block';
-  bar.style.width = '5%';
-  txt.textContent = 'A ligar ao servidor...';
-
-  // Add spin animation
-  if (!document.getElementById('spin-style')) {
-    const s = document.createElement('style');
-    s.id = 'spin-style';
-    s.textContent = '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
-    document.head.appendChild(s);
-  }
-
+// ── Live price ────────────────────────────────────────────
+async function fetchPrice() {
   try {
-    // Simulate progress while waiting (the endpoint can take minutes for many assets)
-    let pct = 5;
-    const interval = setInterval(() => {
-      if (pct < 90) {
-        pct += Math.random() * 3;
-        bar.style.width = Math.min(pct, 90) + '%';
-        const done = Math.floor((pct / 100) * allAssets.length);
-        txt.textContent = `A processar... ~${done}/${allAssets.length} ativos`;
-      }
-    }, 1500);
+    const r = await fetch('/api/quote?symbols=V');
+    const d = await r.json();
+    const q = d.quoteResponse?.result?.[0];
+    if (!q) return;
+    const price = q.regularMarketPrice;
+    const chg   = q.regularMarketChangePercent;
+    const chgAbs= q.regularMarketChange;
+    const pos   = chg >= 0;
 
-    const res = await fetch('/api/refresh-fundamentals');
-    clearInterval(interval);
+    document.getElementById('live-price').textContent = price.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
+    const el = document.getElementById('live-change');
+    el.textContent = (pos?'▲ +':'▼ ') + Math.abs(chgAbs).toFixed(2) + ' € (' + (pos?'+':'') + chg.toFixed(2) + '%)';
+    el.className = 'live-change ' + (pos ? 'pos' : 'neg');
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const result = await res.json();
-
-    bar.style.width = '100%';
-    txt.textContent = `Conclu&#xed;do! ${result.updated} atualizados, ${result.skipped} ignorados (crypto/ETF)${result.errors?.length ? ', ' + result.errors.length + ' erros' : ''}.`;
-    txt.style.color = 'var(--green)';
-
-    toast('Fundamentais atualizados! ' + result.updated + ' ativos.', 'success');
-    await loadData();
-
-  } catch(err) {
-    bar.style.width = '100%';
-    bar.style.background = 'var(--red)';
-    txt.textContent = 'Erro: ' + err.message;
-    txt.style.color = 'var(--red)';
-    toast('Erro ao atualizar: ' + err.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Atualizar Fundamentais';
-  }
+    // Intrinsic vs market price
+    const INTRINSIC_BASE = 272.71;
+    const INTRINSIC_DISC = 231.80;
+    const b1 = document.getElementById('badge-base');
+    const b2 = document.getElementById('badge-disc');
+    const diff1 = ((price - INTRINSIC_BASE) / INTRINSIC_BASE * 100);
+    const diff2 = ((price - INTRINSIC_DISC) / INTRINSIC_DISC * 100);
+    b1.textContent = (diff1 >= 0 ? '+' : '') + diff1.toFixed(1) + '% vs mercado';
+    b1.className   = 'intr-badge ' + (diff1 > 0 ? 'above' : 'below');
+    b2.textContent = (diff2 >= 0 ? '+' : '') + diff2.toFixed(1) + '% vs mercado';
+    b2.className   = 'intr-badge ' + (diff2 > 0 ? 'above' : 'below');
+  } catch {}
 }
 
-/* ASSETS */
-function renderAssets() {
-  const holdingIds = new Set(allHoldings.filter(h=>+h.num_shares>0).map(h=>h.asset_id));
-  document.getElementById('tab-content').innerHTML = `
-    <div class="page-hdr">
-      <div><div class="page-title">Ativos</div><div class="page-sub">${allAssets.length} ativos registados</div></div>
-      <button class="btn btn-primary" onclick="openAddAsset()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Adicionar Ativo
-      </button>
-    </div>
-    <div class="table-wrap">
-    ${allAssets.length===0 ? `<div class="empty"><p>Nenhum ativo registado</p><p>Clica em "Adicionar Ativo" para come&#xe7;ar</p></div>` : `
-      <table>
-        <thead><tr><th>Ticker</th><th>Nome</th><th>ISIN</th><th>Setor</th><th>Tipo</th><th>Estado</th><th style="text-align:right">A&#xe7;&#xf5;es</th></tr></thead>
-        <tbody>
-        ${allAssets.map(a=>`
-          <tr>
-            <td><span class="td-mono" style="font-weight:600">${a.ticker}</span></td>
-            <td>${a.name}</td>
-            <td class="td-mono td-dim" style="font-size:11px">${a.isin||'&#x2014;'}</td>
-            <td class="td-dim">${a.sector||'&#x2014;'}</td>
-            <td><span class="tag">${a.asset_type||'Stock'}</span></td>
-            <td>${holdingIds.has(a.id)?'<span class="tag green">Em carteira</span>':'<span class="tag">Watchlist</span>'}</td>
-            <td><div class="td-actions">
-              <button class="btn btn-secondary btn-sm" onclick="openEditAsset('${a.id}')">Editar</button>
-              <button class="btn btn-danger btn-sm" onclick="confirmDeleteAsset('${a.id}','${a.ticker}')">Eliminar</button>
-            </div></td>
-          </tr>`).join('')}
-        </tbody>
-      </table>`}
-    </div>`;
+// ── Live fundamentals from Finnhub ────────────────────────
+async function fetchMetrics() {
+  try {
+    const r = await fetch('https://finnhub.io/api/v1/stock/metric?symbol=V&metric=all&token=' + FINNHUB_KEY);
+    const d = await r.json();
+    const m = d.metric || {};
+
+    const pe   = m.peTTM ?? m.peNormalizedAnnual;
+    const eps  = m.epsTTM;
+    const beta = m.beta;
+
+    if (pe   != null) document.getElementById('kpi-pe').textContent   = pe.toFixed(2);
+    if (eps  != null) document.getElementById('kpi-eps').textContent  = eps.toFixed(2) + ' $';
+    if (beta != null) document.getElementById('kpi-beta').textContent = beta.toFixed(2);
+  } catch {}
+
+  // Market cap from profile (more accurate)
+  try {
+    const r2 = await fetch('https://finnhub.io/api/v1/stock/profile2?symbol=V&token=' + FINNHUB_KEY);
+    const p  = await r2.json();
+    if (p.marketCapitalization) {
+      const mcap = p.marketCapitalization / 1000; // convert M → B
+      document.getElementById('kpi-mcap').textContent = mcap.toFixed(1) + ' B $';
+    }
+  } catch {}
 }
 
-/* HISTORICAL DATA TAB */
-/* ════════════════════════════════════════
-   HISTORICAL DATA — improved
-   ════════════════════════════════════════ */
-
-let YEARS_LIST = [2025,2024,2023,2022,2021,2020,2019,2018,2017,2016,2015,2014,2013,2012];
-const VISIBLE_YEARS = 7; // number of year columns visible at once
-let yearOffset = 0; // 0 = most recent, 1 = shift one older, etc.
-
-const INCOME_FIELDS = [
-  { key:'eps',               label:'EPS',                              unit:'$',  decimals:4 },
-  { key:'revenue',           label:'Revenue / Receita Total',          unit:'M$', decimals:2 },
-  { key:'gross_profit',      label:'Gross Profit / Receita Bruta',     unit:'M$', decimals:2 },
-  { key:'op_income',         label:'Operating Income / Rec. Operacional', unit:'M$', decimals:2 },
-  { key:'net_income',        label:'Net Income / Receita L\xedquida',  unit:'M$', decimals:2 },
-  { key:'fcf',               label:'Free Cash Flow',                   unit:'M$', decimals:2 },
-  { key:'ebitda',            label:'EBITDA',                           unit:'M$', decimals:2 },
-  { key:'dividends_per_share',label:'Dividends per Share',             unit:'$',  decimals:4 },
-  { key:'shares_outstanding', label:'Shares Outstanding',              unit:'M',  decimals:2 },
-];
-
-const RATIO_FIELDS = [
-  { key:'gross_margin',   label:'Gross Margin / Margem Bruta',          unit:'%', decimals:4, isPct:true, autoCalc: d => (d.revenue && d.gross_profit != null) ? d.gross_profit / d.revenue : null },
-  { key:'op_margin',      label:'Operation Margin / Margem Operacional', unit:'%', decimals:4, isPct:true, autoCalc: d => (d.revenue && d.op_income   != null) ? d.op_income   / d.revenue : null },
-  { key:'net_margin',     label:'Net Profit Margin / Margem L\xedquida',unit:'%', decimals:4, isPct:true, autoCalc: d => (d.revenue && d.net_income  != null) ? d.net_income  / d.revenue : null },
-  { key:'roic',           label:'ROIC',                                  unit:'%', decimals:4, isPct:true },
-  { key:'current_ratio',  label:'Current Ratio',                         unit:'',  decimals:4 },
-  { key:'lt_debt_capital',label:'Long-term Debt / Capital',             unit:'',  decimals:4 },
-  { key:'debt_equity',    label:'Debt / Equity Ratio',                   unit:'',  decimals:4 },
-];
-
-// Custom fields per asset — stored in memory, saved to asset_custom_fields (future)
-let customIncomeFields = []; // { key:'custom_N', label:'...' }
-let customRatioFields  = [];
-
-let histAssetId  = null;
-let histData     = {};  // { year: { field: value } }
-let histSegments = {};  // { year: [ { name, revenue } ] }
-let histView     = 'income';
-let segYears     = [2025, 2024, 2023];
-
-// ── Render main tab ──────────────────────────────────────
-function renderHistorico() {
-  const assetOptions = allAssets.map(a =>
-    `<option value="${a.id}" ${a.id===histAssetId?'selected':''}>${a.ticker} — ${a.name}</option>`
-  ).join('');
-
-  const maxOffset = Math.max(0, YEARS_LIST.length - VISIBLE_YEARS);
-  const canPrev = yearOffset < maxOffset;
-  const canNext = yearOffset > 0;
-
-  document.getElementById('tab-content').innerHTML = `
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">Dados Hist\xf3ricos</div>
-        <div class="page-sub">Insere os dados anuais por ativo</div>
-      </div>
-      <div style="display:flex;gap:8px">
-        ${histAssetId ? `
-        <button class="btn btn-secondary" onclick="exportPDF()" id="pdf-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          Exportar PDF
-        </button>` : ''}
-        <button class="btn btn-primary" onclick="saveHistorico()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          Guardar Tudo
-        </button>
-      </div>
-    </div>
-
-    <div class="hist-asset-selector">
-      <label>ATIVO</label>
-      <select id="hist-asset-select" onchange="selectHistAsset(this.value)">
-        <option value="">— Selecionar ativo —</option>
-        ${assetOptions}
-      </select>
-
-      ${histAssetId ? `
-      <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
-        <span style="font-size:11px;color:var(--muted)">Anos vis\xedveis:</span>
-        <button onclick="shiftYears(1)" ${!canNext?'disabled':''} title="Mais recentes"
-          style="border:1px solid var(--border);background:var(--card);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:13px;${!canNext?'opacity:.35':''}">&#8592;</button>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim);min-width:80px;text-align:center">
-          ${YEARS_LIST[yearOffset+VISIBLE_YEARS-1]} — ${YEARS_LIST[yearOffset]}
-        </span>
-        <button onclick="shiftYears(-1)" ${!canPrev?'disabled':''} title="Mais antigos"
-          style="border:1px solid var(--border);background:var(--card);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:13px;${!canPrev?'opacity:.35':''}">&#8594;</button>
-        <button onclick="addYear()" title="Adicionar ano"
-          style="border:1px solid var(--accent);background:rgba(83,68,232,.08);color:var(--accent);border-radius:7px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;margin-left:4px">
-          + Ano
-        </button>
-      </div>` : ''}
-    </div>
-
-    ${histAssetId ? `
-    <div class="hist-tabs">
-      <button class="hist-tab ${histView==='income'?'active':''}" onclick="setHistView('income')">Dados Gerais</button>
-      <button class="hist-tab ${histView==='ratios'?'active':''}" onclick="setHistView('ratios')">R\xe1cios</button>
-      <button class="hist-tab ${histView==='segments'?'active':''}" onclick="setHistView('segments')">Segmentos</button>
-    </div>` : ''}
-
-    <div id="hist-body">
-      ${histAssetId ? buildHistBody() : `
-        <div class="empty">
-          <p>Seleciona um ativo acima</p>
-          <p>Escolhe um ativo para inserir os seus dados hist\xf3ricos</p>
-        </div>`}
-    </div>`;
-}
-
-// ── Year navigation ──────────────────────────────────────
-function shiftYears(dir) {
-  // dir = -1 → go older, +1 → go newer
-  const maxOffset = Math.max(0, YEARS_LIST.length - VISIBLE_YEARS);
-  yearOffset = Math.max(0, Math.min(maxOffset, yearOffset - dir));
-  document.getElementById('hist-body').innerHTML = buildHistBody();
-  renderHistorico(); // re-render to update button states
-}
-
-function addYear() {
-  const yr = parseInt(prompt('Inserir ano (ex: 2010, 2026):'));
-  if (!yr || isNaN(yr) || yr < 1900 || yr > 2100) return;
-  if (YEARS_LIST.includes(yr)) { alert('O ano ' + yr + ' já existe.'); return; }
-  YEARS_LIST = [...YEARS_LIST, yr].sort((a,b)=>b-a);
-  // Jump to show the new year
-  yearOffset = Math.max(0, YEARS_LIST.indexOf(yr) - Math.floor(VISIBLE_YEARS/2));
-  yearOffset = Math.min(yearOffset, Math.max(0, YEARS_LIST.length - VISIBLE_YEARS));
-  renderHistorico();
-}
-
-function removeYear(year) {
-  if (!confirm('Remover o ano ' + year + ' da vista?\n\nNota: os dados guardados no Supabase não são apagados.')) return;
-  YEARS_LIST = YEARS_LIST.filter(y => y !== year);
-  yearOffset = Math.min(yearOffset, Math.max(0, YEARS_LIST.length - VISIBLE_YEARS));
-  renderHistorico();
-}
-
-// ── Visible years window ─────────────────────────────────
-function getVisibleYears() {
-  return YEARS_LIST.slice(yearOffset, yearOffset + VISIBLE_YEARS);
-}
-
-// ── Load asset data ──────────────────────────────────────
-async function selectHistAsset(id) {
-  histAssetId = id || null;
-  histData    = {};
-  histSegments= {};
-  yearOffset  = 0;
-  customIncomeFields = [];
-  customRatioFields  = [];
-  if (!id) { renderHistorico(); return; }
-
-  const [annRes, segRes] = await Promise.all([
-    sb.from('asset_annual_data').select('*').eq('asset_id', id),
-    sb.from('asset_segments').select('*').eq('asset_id', id).order('fiscal_year').order('sort_order'),
-  ]);
-
-  (annRes.data || []).forEach(row => { histData[row.fiscal_year] = row; });
-
-  const segsRaw = segRes.data || [];
-  const yearsWithSegs = [...new Set(segsRaw.map(s=>s.fiscal_year))].sort((a,b)=>b-a);
-  if (yearsWithSegs.length) segYears = yearsWithSegs.slice(0,3);
-
-  segsRaw.forEach(s => {
-    if (!histSegments[s.fiscal_year]) histSegments[s.fiscal_year] = [];
-    histSegments[s.fiscal_year].push({ name:s.segment_name, revenue:s.revenue, sort_order:s.sort_order });
-  });
-
-  // Detect any years in data that aren't in YEARS_LIST
-  const dataYears = Object.keys(histData).map(Number);
-  dataYears.forEach(y => {
-    if (!YEARS_LIST.includes(y)) YEARS_LIST = [y, ...YEARS_LIST].sort((a,b)=>b-a);
-  });
-
-  renderHistorico();
-}
-
-function setHistView(view) {
-  histView = view;
-  document.getElementById('hist-body').innerHTML = buildHistBody();
-  // Update tab active state
-  document.querySelectorAll('.hist-tab').forEach((b,i) => {
-    b.classList.toggle('active', ['income','ratios','segments'][i] === view);
-  });
-}
-
-function buildHistBody() {
-  if (histView === 'income') {
-    const fields = [...INCOME_FIELDS, ...customIncomeFields];
-    return buildAnnualTable(fields, 'income') + '<div id="summary-block">' + buildSummaryBlock(fields) + '</div>';
-  }
-  if (histView === 'ratios') {
-    const fields = [...RATIO_FIELDS, ...customRatioFields];
-    return buildAnnualTable(fields, 'ratios') + '<div id="summary-block">' + buildSummaryBlock(fields) + '</div>';
-  }
-  if (histView === 'segments') return buildSegmentEditor();
-  return '';
-}
-
-// ── Summary block: Last Year / Avgs / CAGRs ─────────────
-function buildSummaryBlock(fields) {
-  // Collect all years with any data, sorted desc
-  const allYears = YEARS_LIST.filter(y => {
-    const d = histData[y];
-    return d && Object.values(d).some(v => v != null && typeof v === 'number');
-  }).sort((a,b) => b-a);
-
-  if (allYears.length < 2) return ''; // need at least 2 years
-
-  const newestYear = allYears[0];
-
-  // Helper: get raw value for a field in a given year
-  function getVal(field, year) {
-    const d = histData[year];
-    if (!d) return null;
-    return d[field.key] != null ? parseFloat(d[field.key]) : null;
-  }
-
-  // Average of last N years
-  function avg(field, n) {
-    const years = allYears.slice(0, n);
-    const vals  = years.map(y => getVal(field, y)).filter(v => v != null);
-    if (!vals.length) return null;
-    return vals.reduce((s,v) => s+v, 0) / vals.length;
-  }
-
-  // CAGR over N years: (end/start)^(1/N) - 1
-  function cagr(field, n) {
-    if (allYears.length < n+1) return null;
-    const endVal   = getVal(field, allYears[0]);
-    const startVal = getVal(field, allYears[n]);
-    if (endVal == null || startVal == null || startVal === 0) return null;
-    if (endVal < 0 || startVal < 0) return null; // CAGR not meaningful for negatives
-    return Math.pow(endVal / startVal, 1/n) - 1;
-  }
-
-  // YoY
-  function yoy(field) {
-    if (allYears.length < 2) return null;
-    const curr = getVal(field, allYears[0]);
-    const prev = getVal(field, allYears[1]);
-    if (curr == null || prev == null || prev === 0) return null;
-    return (curr - prev) / Math.abs(prev);
-  }
-
-  // Format helpers
-  const fmtVal = (field, v) => {
-    if (v == null || isNaN(v)) return '<span style="color:var(--muted)">—</span>';
-    if (field.isPct) return (v*100).toFixed(2)+'%';
-    return v.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2});
-  };
-
-  const fmtPct = (v) => {
-    if (v == null || isNaN(v)) return '<span style="color:var(--muted)">—</span>';
-    const pos = v >= 0;
-    const col = pos ? 'var(--green)' : 'var(--red)';
-    return `<span style="color:${col};font-weight:600">${pos?'+':''}${(v*100).toFixed(2)}%</span>`;
-  };
-
-  // Shares outstanding: invert the color logic (lower = good = buybacks)
-  const fmtCagr = (field, v) => {
-    if (v == null || isNaN(v)) return '<span style="color:var(--muted)">—</span>';
-    const pos = v >= 0;
-    const invertGood = field.key === 'shares_outstanding';
-    const isGood = invertGood ? !pos : pos;
-    const col = isGood ? 'var(--green)' : 'var(--red)';
-    return `<span style="color:${col};font-weight:600">${pos?'+':''}${(v*100).toFixed(2)}%</span>`;
-  };
-
-  const cols = [
-    { label:'Último Ano',  getValue: f => fmtVal(f, getVal(f, newestYear)) },
-    { label:'Méd. 10A',   getValue: f => fmtVal(f, avg(f,10)) },
-    { label:'Méd. 5A',    getValue: f => fmtVal(f, avg(f,5))  },
-    { label:'Méd. 3A',    getValue: f => fmtVal(f, avg(f,3))  },
-    { label:'YoY',         getValue: f => fmtPct(yoy(f))      },
-    { label:'CAGR 10A',   getValue: f => fmtCagr(f, cagr(f,10)) },
-    { label:'CAGR 5A',    getValue: f => fmtCagr(f, cagr(f,5))  },
-    { label:'CAGR 3A',    getValue: f => fmtCagr(f, cagr(f,3))  },
+// ── Annual table ──────────────────────────────────────────
+function buildAnnualTable() {
+  const cols = YEARS.slice(0, 10);
+  const sections = [
+    { label:'EPS', data:EPS, gr:EPS_GR, fmt:fmtD },
+    { label:'Receita Total', data:REV, gr:REV_GR, fmt:v=>fmtB(v)+' $' },
+    { label:'Receita Líquida', data:NET_INC, gr:NET_GR, fmt:v=>fmtB(v)+' $' },
+    { label:'Free Cash Flow', data:FCF, gr:FCF_GR, fmt:v=>fmtB(v)+' $' },
+    { label:'EBITDA', data:EBITDA, gr:null, fmt:v=>fmtB(v)+' $' },
+    { label:'Dividendos / ação', data:DIVS, gr:DIVS_GR, fmt:fmtD },
+    { label:'Ações em circulação (M)', data:SHARES, gr:null, fmt:v=>v ? v.toFixed(0)+' M' : '—' },
   ];
 
-  let html = `
-  <div style="margin-top:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
-    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <div style="font-size:14px;font-weight:600">Análise Comparativa</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Calculado automaticamente a partir dos dados inseridos · ${newestYear}</div>
-      </div>
-      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--card2);border:1px solid var(--border);padding:3px 9px;border-radius:99px">${allYears.length} anos de dados</span>
-    </div>
-    <div style="overflow-x:auto;">
-    <table style="width:100%;border-collapse:collapse;min-width:700px;">
-      <thead>
-        <tr>
-          <th style="padding:10px 14px;text-align:left;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--card2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);position:sticky;left:0;min-width:200px">Métrica</th>
-          ${cols.map((c,i) => `<th style="padding:10px 12px;text-align:right;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:${i>=4?'var(--accent)':'var(--muted)'};background:var(--card2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);white-space:nowrap${i===4?';border-left:2px solid var(--border)':''}">${c.label}</th>`).join('')}
-        </tr>
-      </thead>
-      <tbody>`;
+  const hdrs = cols.map(y => '<th>' + y + '</th>').join('');
+  let html = '<table class="annual-table"><thead><tr><th>MÉTRICA</th>' + hdrs + '</tr></thead><tbody>';
 
-  fields.forEach((f, fi) => {
-    const bg = fi%2===0 ? 'var(--card)' : 'rgba(0,0,0,.02)';
-    html += `<tr>
-      <td style="padding:10px 14px;font-size:12px;color:var(--dim);font-weight:500;background:var(--card2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);position:sticky;left:0">${f.label}</td>
-      ${cols.map((c,i) => `<td style="padding:10px 12px;font-size:12.5px;text-align:right;font-family:'JetBrains Mono',monospace;background:${bg};border-bottom:1px solid var(--border);border-right:1px solid var(--border)${i===4?';border-left:2px solid var(--border)':''}">${c.getValue(f)}</td>`).join('')}
-    </tr>`;
+  sections.forEach(s => {
+    const vals = cols.map((_,i) => '<td>' + s.fmt(s.data[i]) + '</td>').join('');
+    html += '<tr><td>' + s.label + '</td>' + vals + '</tr>';
+    if (s.gr) {
+      const grs = cols.map((_,i) => {
+        if (i === cols.length-1) return '<td></td>';
+        const v = s.gr[i];
+        return '<td class="' + grClass(v) + '">' + fmtPct(v) + '</td>';
+      }).join('');
+      html += '<tr class="gr"><td>↳ crescimento</td>' + grs + '</tr>';
+    }
   });
 
-  html += `</tbody></table></div></div>`;
-  return html;
+  html += '</tbody></table>';
+  document.getElementById('annual-table-wrap').innerHTML = html;
 }
-function buildAnnualTable(fields, section) {
-  const cols  = getVisibleYears(); // e.g. [2025,2024,2023,2022,2021,2020,2019]
-  const colW  = 118;
-  const labelW= 230;
 
-  let html = `
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
-    <div style="overflow-x:auto;">
-    <table style="width:${labelW + cols.length*colW}px;border-collapse:collapse;min-width:100%">
-      <thead>
-        <tr>
-          <th style="width:${labelW}px;padding:10px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--card2);border-bottom:2px solid var(--border);border-right:1px solid var(--border);position:sticky;left:0;z-index:2">M\xe9trica</th>
-          ${cols.map(y=>`<th style="width:${colW}px;padding:8px 6px;text-align:center;font-size:13px;font-weight:700;color:var(--text);background:var(--card2);border-bottom:2px solid var(--border);border-right:1px solid var(--border);position:relative">
-            <div style="display:flex;align-items:center;justify-content:center;gap:4px">
-              ${y}
-              <button onclick="removeYear(${y})" title="Remover ano ${y}"
-                style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 2px;line-height:1;opacity:.5;transition:opacity .15s"
-                onmouseover="this.style.opacity='1';this.style.color='var(--red)'"
-                onmouseout="this.style.opacity='.5';this.style.color='var(--muted)'">&times;</button>
-            </div>
-          </th>`).join('')}
-        </tr>
-      </thead>
-      <tbody>`;
+// ── Ratios table ──────────────────────────────────────────
+function buildRatiosTable() {
+  const cols = YEARS.slice(0, 10);
+  const sections = [
+    { label:'Margem Operacional', data:OP_M,  fmt:v=>v?'(v*100).toFixed(1)%':'—' },
+    { label:'Margem Líquida',     data:NET_M, fmt:v=>v?'(v*100).toFixed(1)%':'—' },
+    { label:'ROIC',               data:ROIC,  fmt:v=>v?(v*100).toFixed(1)+'%':'—' },
+    { label:'Current Ratio',      data:CUR_R, fmt:v=>v?v.toFixed(2):'—' },
+    { label:'LT Debt / Capital',  data:LT_D,  fmt:v=>v?v.toFixed(3):'—' },
+    { label:'Debt / Equity',      data:DEBT_E,fmt:v=>v?v.toFixed(3):'—' },
+  ];
 
-  fields.forEach((f, fi) => {
-    const bg = fi % 2 === 0 ? 'var(--card)' : 'rgba(0,0,0,.02)';
-    const isAuto = !!f.autoCalc;
+  const hdrs = cols.map(y => '<th>' + y + '</th>').join('');
+  let html = '<table class="annual-table"><thead><tr><th>RÁCIO</th>' + hdrs + '</tr></thead><tbody>';
 
-    html += `<tr>
-      <td style="padding:0 14px;font-size:12px;color:var(--dim);font-weight:500;background:var(--card2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);position:sticky;left:0;z-index:1;height:52px">
-        ${f.label}
-        ${isAuto ? `<span style="margin-left:6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);background:rgba(83,68,232,.08);padding:1px 5px;border-radius:4px">AUTO</span>` : ''}
-        ${f.custom ? `<button onclick="removeCustomField('${section}','${f.key}')" style="margin-left:6px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px">&times;</button>` : ''}
-      </td>`;
+  sections.forEach(s => {
+    const vals = cols.map((_,i) => {
+      const v = s.data[i];
+      let txt;
+      if (s.label.includes('Margem') || s.label === 'ROIC') {
+        txt = v ? (v*100).toFixed(1)+'%' : '—';
+      } else {
+        txt = v ? v.toFixed(2) : '—';
+      }
+      return '<td>' + txt + '</td>';
+    }).join('');
+    html += '<tr><td>' + s.label + '</td>' + vals + '</tr>';
+  });
 
-    cols.forEach((year, ci) => {
-      const row     = histData[year] || {};
-      const rowPrev = histData[cols[ci+1]] || {};
+  html += '</tbody></table>';
+  document.getElementById('ratios-table-wrap').innerHTML = html;
+}
 
-      // Resolve value: auto-calculated or manually stored
-      let rawVal = row[f.key] != null ? row[f.key] : null;
-      if (isAuto) {
-        const calc = f.autoCalc(row);
-        if (calc != null) {
-          rawVal = calc;
-          // Also store back into histData so summary block can use it
-          if (!histData[year]) histData[year] = {};
-          histData[year][f.key] = calc;
+// ── Segment table ─────────────────────────────────────────
+
+const SEG_TOOLTIPS = {
+  'Service Revenue':           'São taxas cobradas aos bancos e instituições financeiras pelo uso da marca Visa e pelo volume de pagamentos gerado. Quanto mais as pessoas usam os cartões Visa de um banco, mais a Visa ganha aqui.',
+  'Data Processing Revenue':   'É o "coração tecnológico". Foca-se na autorização, compensação e liquidação de cada transação. Quando passas o cartão no terminal, a Visa cobra uma pequena taxa fixa por processar essa informação e garantir que o dinheiro vai do ponto A para o ponto B com segurança.',
+  'Data Processing':           'É o "coração tecnológico". Foca-se na autorização, compensação e liquidação de cada transação. Quando passas o cartão no terminal, a Visa cobra uma pequena taxa fixa por processar essa informação e garantir que o dinheiro vai do ponto A para o ponto B com segurança.',
+  'International Transaction':  'Esta parte foca-se em pagamentos feitos fora do país de origem do cartão ou que envolvam conversão de moeda. É uma das áreas mais rentáveis, pois as taxas de câmbio e processamento transfronteiriço são mais elevadas.',
+  'International Transation':   'Esta parte foca-se em pagamentos feitos fora do país de origem do cartão ou que envolvam conversão de moeda. É uma das áreas mais rentáveis, pois as taxas de câmbio e processamento transfronteiriço são mais elevadas.',
+  'Other':                      'Inclui serviços de consultoria, licenças de utilização, segurança contra fraudes e análise de dados para parceiros.',
+  'Cliente Incentives':         'Tal como a UnitedHealth tem as "eliminations" para não contar dinheiro duas vezes, a Visa subtrai estes incentivos da sua receita bruta. São pagamentos ou descontos que a Visa dá aos bancos e parceiros para que eles continuem a emitir cartões Visa em vez de mudarem para a Mastercard. É o "custo" para manter a rede dominante e em crescimento.',
+  'Client Incentives':          'Tal como a UnitedHealth tem as "eliminations" para não contar dinheiro duas vezes, a Visa subtrai estes incentivos da sua receita bruta. São pagamentos ou descontos que a Visa dá aos bancos e parceiros para que eles continuem a emitir cartões Visa em vez de mudarem para a Mastercard. É o "custo" para manter a rede dominante e em crescimento.',
+};
+
+function buildSegTable() {
+  const total = 40.0;
+  const tbody = document.getElementById('seg-tbody');
+  let html = '';
+
+  Object.entries(SEGS).forEach(([name, seg]) => {
+    const val = seg.vals[0];
+    const pct = seg.pct;
+    const yoy = seg.yoy;
+    const barW = pct ? Math.round(pct * 100) : 0;
+    const isNeg = name === 'Client Incentives';
+    const tooltip = typeof SEG_TOOLTIPS !== 'undefined' ? (SEG_TOOLTIPS[name] || '') : '';
+    const nameCell = tooltip
+      ? '<div class="seg-tooltip-wrap">'+name+'<button class="seg-info-btn">★</button><div class="seg-tooltip">'+tooltip+'</div></div>'
+      : name;
+
+    html += '<tr>';
+    html += '<td>' + nameCell + '</td>';
+    html += '<td class="' + (isNeg?'neg':'') + '">' + (val>=0?'':'-') + Math.abs(val).toFixed(2) + ' B $</td>';
+    html += '<td>' + (pct ? (pct*100).toFixed(1)+'%' : '—') + '</td>';
+    html += '<td class="bar-cell">';
+    if (pct) {
+      html += '<div class="bar-bg"><div class="bar-fill" style="width:' + barW + '%"></div></div>';
+    }
+    html += '</td>';
+    html += '<td class="' + (yoy>=0?'pos':'neg') + '">' + (yoy>=0?'+':'') + (yoy*100).toFixed(1) + '%</td>';
+    html += '</tr>';
+  });
+
+  tbody.innerHTML = html;
+}
+
+// ── Chart helpers ─────────────────────────────────────────
+function baseOpts(suffix, decimals) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#ffffff',
+        borderColor: 'rgba(0,0,0,.12)', borderWidth: 1,
+        bodyColor: '#e4e4f0',
+        bodyFont: { family: "'JetBrains Mono'", size: 11 },
+        callbacks: { label: c => ' ' + (c.parsed.y != null ? c.parsed.y.toFixed(decimals) + suffix : '—') }
+      }
+    },
+    scales: {
+      x: { grid:{display:false}, ticks:{color:'#777790',font:{size:10}}, border:{display:false} },
+      y: { grid:{color:'rgba(0,0,0,.07)'}, ticks:{color:'#777790',font:{size:10},callback:v=>v.toFixed(decimals)+suffix}, border:{display:false} }
+    }
+  };
+}
+
+function gradient(ctx, color, h) {
+  const g = ctx.createLinearGradient(0,0,0,h||200);
+  g.addColorStop(0, color.replace(')',',0.25)').replace('rgb','rgba'));
+  g.addColorStop(1, color.replace(')',',0)').replace('rgb','rgba'));
+  return g;
+}
+
+// ── Build charts ──────────────────────────────────────────
+function buildCharts() {
+  const revYears = [...YEARS].reverse();
+  const revRev   = [...REV].reverse();
+  const revEps   = [...EPS].reverse();
+  const revFcf   = [...FCF].reverse();
+  const revDivs  = [...DIVS].reverse();
+  const revOpM   = [...OP_M].reverse();
+  const revNetM  = [...NET_M].reverse();
+  const revRoic  = [...ROIC].reverse();
+
+  // Revenue bar
+  const revCtx = document.getElementById('rev-chart').getContext('2d');
+  new Chart(revCtx, {
+    type: 'bar',
+    data: {
+      labels: revYears,
+      datasets: [{ data: revRev, backgroundColor: 'rgba(83,68,232,.75)', borderColor: '#6153f5', borderWidth: 1, borderRadius: 4 }]
+    },
+    options: baseOpts(' B$', 1)
+  });
+
+  // EPS line
+  const epsCtx = document.getElementById('eps-chart').getContext('2d');
+  new Chart(epsCtx, {
+    type: 'line',
+    data: {
+      labels: revYears,
+      datasets: [{
+        data: revEps,
+        borderColor: '#0fe07a', backgroundColor: 'rgba(10,153,85,.08)',
+        borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#0fe07a', fill: true, tension: 0.3
+      }]
+    },
+    options: baseOpts(' $', 2)
+  });
+
+  // Margins
+  const mCtx = document.getElementById('margins-chart').getContext('2d');
+  new Chart(mCtx, {
+    type: 'line',
+    data: {
+      labels: revYears,
+      datasets: [
+        { label:'Op. Margin', data: revOpM.map(v=>v*100), borderColor:'#6ba3ff', backgroundColor:'transparent', borderWidth:2, pointRadius:3, pointBackgroundColor:'#6ba3ff', tension:0.3 },
+        { label:'Net Margin', data: revNetM.map(v=>v*100), borderColor:'#f5b731', backgroundColor:'transparent', borderWidth:2, pointRadius:3, pointBackgroundColor:'#f5b731', tension:0.3 },
+      ]
+    },
+    options: {
+      ...baseOpts('%', 1),
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor:'#ffffff', borderColor:'rgba(0,0,0,.12)', borderWidth:1,
+          callbacks: { label: c => ' ' + c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '%' }
         }
       }
-
-      const dispVal = rawVal != null ? (f.isPct ? (rawVal*100).toFixed(2) : String(rawVal)) : '';
-
-      // YoY growth
-      let growthHtml = '';
-      const prevRaw = rowPrev[f.key] != null ? rowPrev[f.key] : (isAuto ? f.autoCalc(rowPrev) : null);
-      if (rawVal != null && prevRaw != null && prevRaw !== 0) {
-        const gr  = (rawVal - prevRaw) / Math.abs(prevRaw) * 100;
-        const pos = gr >= 0;
-        const invertGood = f.key === 'shares_outstanding';
-        const isGood = invertGood ? !pos : pos;
-        growthHtml = `<div style="font-size:9.5px;font-weight:600;color:${isGood?'var(--green)':'var(--red)'};margin-top:1px;text-align:right">${pos?'+':''}${gr.toFixed(1)}%</div>`;
-      }
-
-      if (isAuto) {
-        // Read-only calculated cell
-        html += `<td style="padding:6px 8px;background:${bg};border-bottom:1px solid var(--border);border-right:1px solid var(--border);vertical-align:middle;text-align:right">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${rawVal!=null?'var(--text)':'var(--muted)'};padding:2px 4px">
-            ${rawVal != null ? (f.isPct ? (rawVal*100).toFixed(2)+'%' : dispVal) : '—'}
-          </div>
-          ${growthHtml}
-        </td>`;
-      } else {
-        // Editable input cell
-        html += `<td style="padding:4px 6px;background:${bg};border-bottom:1px solid var(--border);border-right:1px solid var(--border);vertical-align:middle">
-          <input class="ag-input" type="number" step="any"
-            data-year="${year}" data-field="${f.key}" data-pct="${f.isPct||false}"
-            value="${dispVal}" placeholder="—"
-            oninput="handleHistInput(${year},'${f.key}',this.value,${f.isPct||false},this)">
-          ${growthHtml}
-        </td>`;
-      }
-    });
-    html += `</tr>`;
+    }
   });
 
-  html += `</tbody></table></div>`;
+  // ROIC
+  const roicCtx = document.getElementById('roic-chart').getContext('2d');
+  new Chart(roicCtx, {
+    type: 'line',
+    data: {
+      labels: revYears,
+      datasets: [{
+        data: revRoic.map(v=>v*100),
+        borderColor: '#00d4aa', backgroundColor: 'rgba(0,125,102,.1)',
+        borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#00d4aa', fill: true, tension: 0.3
+      }]
+    },
+    options: baseOpts('%', 1)
+  });
 
-  // Add custom metric button
-  html += `
-    <button onclick="addCustomField('${section}')"
-      style="display:flex;align-items:center;gap:6px;padding:10px 16px;font-size:12.5px;color:var(--dim);background:none;border:none;border-top:1px solid var(--border);cursor:pointer;font-family:'Outfit',sans-serif;width:100%;transition:color .15s"
-      onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--dim)'">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Adicionar m\xe9trica personalizada
-    </button>
-  </div>`;
+  // Dividends
+  const divCtx = document.getElementById('div-chart').getContext('2d');
+  new Chart(divCtx, {
+    type: 'bar',
+    data: {
+      labels: revYears,
+      datasets: [{ data: revDivs, backgroundColor: 'rgba(10,153,85,.75)', borderColor: '#0fe07a', borderWidth: 1, borderRadius: 4 }]
+    },
+    options: baseOpts(' $', 2)
+  });
 
-  return html;
+  // FCF
+  const fcfCtx = document.getElementById('fcf-chart').getContext('2d');
+  new Chart(fcfCtx, {
+    type: 'bar',
+    data: {
+      labels: revYears,
+      datasets: [{ data: revFcf, backgroundColor: 'rgba(59,111,221,.75)', borderColor: '#6ba3ff', borderWidth: 1, borderRadius: 4 }]
+    },
+    options: baseOpts(' B$', 1)
+  });
 }
 
-// ── Handle input + live YoY update ──────────────────────
-function handleHistInput(year, field, rawVal, isPct, inputEl) {
-  setHistVal(year, field, rawVal, isPct);
-  const autoTriggers = ['revenue','gross_profit','op_income','net_income'];
-  if (autoTriggers.includes(field)) {
-    setTimeout(() => { document.getElementById('hist-body').innerHTML = buildHistBody(); }, 80);
+// ── Static data keys (for fallback) ───────────────────────
+const INCOME_KEYS_STATIC = [
+  { key:'eps',   label:'EPS',             data:EPS,     gr:EPS_GR, fmt:fmtD,               invert:false },
+  { key:'rev',   label:'Receita Total',   data:REV,     gr:REV_GR, fmt:v=>fmtB(v)+' B $',  invert:false },
+  { key:'ni',    label:'Receita Líquida', data:NET_INC, gr:NET_GR, fmt:v=>fmtB(v)+' B $',  invert:false },
+  { key:'fcf',   label:'Free Cash Flow',  data:FCF,     gr:FCF_GR, fmt:v=>fmtB(v)+' B $',  invert:false },
+  { key:'ebitda',label:'EBITDA',          data:EBITDA,  gr:null,   fmt:v=>fmtB(v)+' B $',  invert:false },
+  { key:'divs',  label:'Dividendos/Ação', data:DIVS,    gr:DIVS_GR,fmt:fmtD,               invert:false },
+  { key:'shr',   label:'Ações (M)',       data:SHARES,  gr:null,   fmt:v=>v?v.toFixed(0):'—',invert:true },
+];
+
+const RATIO_KEYS_STATIC = [
+  { key:'opm',  label:'Margem Operacional', data:OP_M,   isPct:true, invert:false },
+  { key:'nm',   label:'Margem Líquida',     data:NET_M,  isPct:true, invert:false },
+  { key:'roic', label:'ROIC',               data:ROIC,   isPct:true, invert:false },
+  { key:'cr',   label:'Current Ratio',      data:CUR_R,  isPct:false,invert:false },
+  { key:'ltd',  label:'LT Debt / Capital',  data:LT_D,   isPct:false,invert:true  },
+  { key:'de',   label:'Debt / Equity',      data:DEBT_E, isPct:false,invert:true  },
+];
+
+function cagrStatic(data, n) {
+  if (data.length <= n) return null;
+  const end = data[0], start = data[n];
+  if (!end || !start || start <= 0 || end <= 0) return null;
+  return Math.pow(end / start, 1/n) - 1;
+}
+function avgStatic(data, n) {
+  const vals = data.slice(0, n).filter(v => v != null);
+  return vals.length ? vals.reduce((s,v) => s+v, 0) / vals.length : null;
+}
+function yoyStatic(data) {
+  if (data.length < 2 || data[0]==null || data[1]==null || data[1]===0) return null;
+  return (data[0] - data[1]) / Math.abs(data[1]);
+}
+
+function fmtGrowthStatic(v, invert=false) {
+  if (v == null) return '<span style="color:var(--muted)">—</span>';
+  const pos  = v >= 0;
+  const good = invert ? !pos : pos;
+  return '<span style="color:' + (good?'var(--green)':'var(--red)') + ';font-weight:600">' + (pos?'+':'') + (v*100).toFixed(2) + '%</span>';
+}
+
+function buildSummaryTableStatic(keys, wrapperId) {
+  let html = '<table class="avg-table"><thead><tr>'
+    + '<th></th><th>ÚLT. ANO</th><th>MÉD. 3A</th><th>MÉD. 5A</th><th>MÉD. 10A</th>'
+    + '<th style="border-left:1px solid var(--border);padding-left:14px">YoY</th>'
+    + '<th>CAGR 3A</th><th>CAGR 5A</th><th>CAGR 10A</th>'
+    + '</tr></thead><tbody>';
+
+  keys.forEach((f, fi) => {
+    const d   = f.data;
+    const fmt = f.fmt || (v => v != null ? (f.isPct ? (v*100).toFixed(2)+'%' : v.toFixed(2)) : '—');
+    const a3  = avgStatic(d,3),  a5 = avgStatic(d,5),  a10 = avgStatic(d,10);
+    const c3  = cagrStatic(d,3), c5 = cagrStatic(d,5), c10 = cagrStatic(d,10);
+    const yoy = yoyStatic(d);
+    const bg  = fi%2===0 ? 'var(--card)' : 'rgba(0,0,0,.02)';
+
+    html += `<tr class="metric-row" onclick="toggleHistoryStatic('${f.key}','${f.label}',${f.invert},'${wrapperId}')" style="background:${bg}">`;
+    html += `<td><span class="expand-icon">▶</span>${f.label}</td>`;
+    html += `<td class="hi">${fmt(d[0])}</td>`;
+    html += `<td>${fmt(a3)}</td><td>${fmt(a5)}</td><td>${fmt(a10)}</td>`;
+    html += `<td style="border-left:1px solid var(--border);padding-left:14px">${fmtGrowthStatic(yoy,f.invert)}</td>`;
+    html += `<td>${fmtGrowthStatic(c3,f.invert)}</td>`;
+    html += `<td>${fmtGrowthStatic(c5,f.invert)}</td>`;
+    html += `<td>${fmtGrowthStatic(c10,f.invert)}</td>`;
+    html += '</tr>';
+    html += `<tr class="history-row" id="hist-${f.key}"><td colspan="9"><div class="history-inner" id="hinner-${f.key}"></div></td></tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById(wrapperId).innerHTML = html;
+}
+
+function toggleHistoryStatic(key, label, invert, wrapperId) {
+  const hrow  = document.getElementById('hist-' + key);
+  const inner = document.getElementById('hinner-' + key);
+  const isOpen = hrow.classList.contains('open'); // capture BEFORE closing others
+
+  // Close all in this wrapper
+  document.getElementById(wrapperId).querySelectorAll('.metric-row').forEach(r => r.classList.remove('expanded'));
+  document.getElementById(wrapperId).querySelectorAll('.history-row').forEach(r => r.classList.remove('open'));
+
+  // If it was already open — just close, done
+  if (isOpen) return;
+
+  // Open this one
+  const row = document.querySelector('#' + wrapperId + ' [onclick*="\'' + key + '\'"]');
+  row?.classList.add('expanded');
+  hrow.classList.add('open');
+
+  const allKeys = [...INCOME_KEYS_STATIC, ...RATIO_KEYS_STATIC];
+  const f = allKeys.find(k => k.key === key);
+  if (!f) return;
+
+  const fmt = f.fmt || (v => v != null ? (f.isPct ? (v*100).toFixed(2)+'%' : v.toFixed(2)) : '—');
+
+  // Table
+  let h = '<div style="display:grid;grid-template-columns:220px 1fr;gap:0">';
+  h += '<div><table style="width:100%"><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
+  f.data.forEach((v, i) => {
+    const prev = f.data[i+1];
+    let yoy = '—';
+    if (v != null && prev != null && prev !== 0) {
+      const g = (v-prev)/Math.abs(prev);
+      const good = f.invert ? g<=0 : g>=0;
+      yoy = '<span style="color:' + (good?'var(--green)':'var(--red)') + ';font-weight:600">' + (g>=0?'+':'') + (g*100).toFixed(2) + '%</span>';
+    }
+    const bg = i%2===0?'var(--card)':'rgba(83,68,232,.02)';
+    h += '<tr style="background:' + bg + '"><td>' + YEARS[i] + '</td><td>' + fmt(v) + '</td><td>' + yoy + '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+
+  // SVG Bar/Line chart
+  const vals    = f.data.slice().reverse(); // oldest first
+  const yrs     = YEARS.slice().reverse();
+  const numVals = vals.filter(v => v != null);
+  if (numVals.length >= 2) {
+    const isPct   = f.isPct;
+    const rawVals = vals.map(v => v != null ? (isPct ? v*100 : v) : null);
+    const validV  = rawVals.filter(v => v != null);
+    const minV    = Math.min(...validV), maxV = Math.max(...validV);
+    const range   = maxV - minV || 0.001;
+    const W=380, H=200, PL=44, PR=10, PT=16, PB=28;
+    const plotW=W-PL-PR, plotH=H-PT-PB;
+    const px = i => PL + i/(vals.length-1||1)*plotW;
+    const py = v => PT + plotH - (v-minV)/range*plotH;
+
+    // Grid + ticks
+    let grid='', xLbls='';
+    [0,0.25,0.5,0.75,1].forEach(t => {
+      const v = minV + range*t, y = py(v);
+      grid += '<line x1="' + PL + '" y1="' + y.toFixed(1) + '" x2="' + (W-PR) + '" y2="' + y.toFixed(1) + '" stroke="rgba(0,0,0,.07)" stroke-width="0.8"/>';
+      const lbl = isPct ? v.toFixed(1)+'%' : Math.abs(v)>=1000?(v/1000).toFixed(1)+'B':v.toFixed(1);
+      grid += '<text x="' + (PL-4) + '" y="' + (y+3).toFixed(1) + '" text-anchor="end" font-size="8" fill="#9ca3af">' + lbl + '</text>';
+    });
+    vals.forEach((v,i) => {
+      if (i%3===0 || vals.length<=8)
+        xLbls += '<text x="' + px(i).toFixed(1) + '" y="' + (H-5) + '" text-anchor="middle" font-size="8" fill="#9ca3af">' + yrs[i] + '</text>';
+    });
+
+    // Line path + area fill
+    let pathD='', fillD='';
+    let firstX=null, lastX=null, lastY=null;
+    rawVals.forEach((v,i) => {
+      if (v != null) {
+        const x=px(i).toFixed(1), y=py(v).toFixed(1);
+        pathD += (pathD?'L':'M')+x+','+y;
+        if (firstX===null) firstX=x;
+        lastX=x; lastY=y;
+      }
+    });
+    if (firstX!==null) fillD = pathD+' L'+lastX+','+(H-PB)+' L'+firstX+','+(H-PB)+' Z';
+    const col = f.invert ? '#ef4444' : '#6366f1';
+    const gid = 'g_'+key;
+
+    const svg = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" style="max-width:100%">'
+      + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
+      + '<stop offset="0%" stop-color="' + col + '" stop-opacity="0.18"/>'
+      + '<stop offset="100%" stop-color="' + col + '" stop-opacity="0.01"/>'
+      + '</linearGradient></defs>'
+      + grid
+      + (fillD ? '<path d="' + fillD + '" fill="url(#' + gid + ')"/>' : '')
+      + (pathD ? '<path d="' + pathD + '" stroke="' + col + '" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>' : '')
+      + xLbls
+      + '</svg>';
+
+    h += '<div style="padding:16px 12px 8px;border-left:1px solid var(--border)">'
+      + '<div style="font-size:10px;font-weight:600;color:var(--dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em">' + label + '</div>'
+      + svg
+      + '</div>';
+  }
+  h += '</div>';
+  inner.innerHTML = h;
+}
+let sbAnnual   = [];  // rows from asset_annual_data
+let sbSegments = [];  // rows from asset_segments
+let sbYears    = [];  // sorted desc
+
+async function loadHistoricalData() {
+  try {
+    const assetRes = await fetch(
+      SUPABASE_URL + '/rest/v1/assets?ticker=eq.V&select=id',
+      { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } }
+    );
+    const assets = await assetRes.json();
+    if (!assets || !assets[0]) return;
+    const assetId = assets[0].id;
+
+    const [annRes, segRes] = await Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/asset_annual_data?asset_id=eq.' + assetId + '&order=fiscal_year.desc',
+        { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } }),
+      fetch(SUPABASE_URL + '/rest/v1/asset_segments?asset_id=eq.' + assetId + '&order=fiscal_year.desc&order=sort_order.asc',
+        { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } }),
+    ]);
+
+    sbAnnual   = await annRes.json() || [];
+    sbSegments = await segRes.json() || [];
+    sbYears    = sbAnnual.map(r => r.fiscal_year);
+  } catch(e) { console.warn('Historical data load failed:', e); }
+}
+
+// ── Data helpers ───────────────────────────────────────────
+function getVal(key, year) {
+  const row = sbAnnual.find(r => r.fiscal_year === year);
+  if (!row) return null;
+  if (row[key] != null) return parseFloat(row[key]);
+  // Auto-calc margins from income data
+  if (key === 'gross_margin' && row.revenue && row.gross_profit != null) return row.gross_profit / row.revenue;
+  if (key === 'op_margin'    && row.revenue && row.op_income != null)    return row.op_income   / row.revenue;
+  if (key === 'net_margin'   && row.revenue && row.net_income != null)   return row.net_income  / row.revenue;
+  return null;
+}
+
+function calcAvg(key, n) {
+  const vals = sbYears.slice(0, n).map(y => getVal(key, y)).filter(v => v != null);
+  return vals.length ? vals.reduce((s,v) => s+v, 0) / vals.length : null;
+}
+
+function calcCagr(key, n) {
+  if (sbYears.length < n + 1) return null;
+  const end   = getVal(key, sbYears[0]);
+  const start = getVal(key, sbYears[n]);
+  if (end == null || start == null || start <= 0 || end <= 0) return null;
+  return Math.pow(end / start, 1/n) - 1;
+}
+
+function calcYoy(key) {
+  if (sbYears.length < 2) return null;
+  const c = getVal(key, sbYears[0]), p = getVal(key, sbYears[1]);
+  if (c == null || p == null || p === 0) return null;
+  return (c - p) / Math.abs(p);
+}
+
+// ── Format helpers ─────────────────────────────────────────
+function fmtVal(key, v) {
+  if (v == null) return '<span style="color:var(--muted)">—</span>';
+  const pctKeys = ['gross_margin','op_margin','net_margin','roic'];
+  if (pctKeys.includes(key)) return (v * 100).toFixed(2) + '%';
+  if (['eps','dividends_per_share'].includes(key)) return v.toFixed(2) + ' $';
+  if (['current_ratio','lt_debt_capital','debt_equity'].includes(key)) return v.toFixed(2);
+  if (key === 'shares_outstanding') return v.toFixed(0) + ' M';
+  // big numbers (revenue, income etc) in billions
+  if (Math.abs(v) >= 1000) return (v/1000).toFixed(2) + ' B $';
+  return v.toFixed(2) + ' M $';
+}
+
+function fmtGrowth(v, invert=false) {
+  if (v == null) return '<span style="color:var(--muted)">—</span>';
+  const pos  = v >= 0;
+  const good = invert ? !pos : pos;
+  const col  = good ? 'var(--green)' : 'var(--red)';
+  return '<span style="color:' + col + ';font-weight:600">' + (pos?'+':'') + (v*100).toFixed(2) + '%</span>';
+}
+
+// ── Build dynamic Dados Gerais ─────────────────────────────
+const INCOME_KEYS = [
+  { key:'eps',                label:'EPS',                  invert:false },
+  { key:'revenue',            label:'Receita Total',        invert:false },
+  { key:'gross_profit',       label:'Receita Bruta',        invert:false },
+  { key:'op_income',          label:'Receita Operacional',  invert:false },
+  { key:'net_income',         label:'Receita Líquida',      invert:false },
+  { key:'fcf',                label:'Free Cash Flow',       invert:false },
+  { key:'ebitda',             label:'EBITDA',               invert:false },
+  { key:'dividends_per_share',label:'Dividendos/Ação',      invert:false },
+  { key:'shares_outstanding', label:'Ações em circulação',  invert:true  },
+];
+
+const RATIO_KEYS = [
+  { key:'gross_margin',   label:'Gross Margin',          invert:false },
+  { key:'op_margin',      label:'Margem Operacional',    invert:false },
+  { key:'net_margin',     label:'Margem Líquida',        invert:false },
+  { key:'roic',           label:'ROIC',                  invert:false },
+  { key:'current_ratio',  label:'Current Ratio',         invert:false },
+  { key:'lt_debt_capital',label:'LT Debt / Capital',     invert:true  },
+  { key:'debt_equity',    label:'Debt / Equity',         invert:true  },
+];
+
+function buildSummaryTable(keys, wrapperId, title, sub) {
+  if (!sbYears.length) return;
+  const ny = sbYears[0];
+
+  let html = '<table class="avg-table"><thead><tr>'
+    + '<th></th>'
+    + '<th>ÚLT. ANO</th>'
+    + '<th>MÉD. 3A</th>'
+    + '<th>MÉD. 5A</th>'
+    + '<th>MÉD. 10A</th>'
+    + '<th style="border-left:1px solid var(--border);padding-left:14px">YoY</th>'
+    + '<th>CAGR 3A</th>'
+    + '<th>CAGR 5A</th>'
+    + '<th>CAGR 10A</th>'
+    + '</tr></thead><tbody>';
+
+  keys.forEach((f, fi) => {
+    const v  = getVal(f.key, ny);
+    const id = 'mr-' + f.key;
+    html += `<tr class="metric-row" id="${id}" onclick="toggleHistory('${f.key}','${f.label}',${f.invert},'${wrapperId}')" style="background:${fi%2===0?'var(--card)':'rgba(0,0,0,.02)'}">`;
+    html += `<td><span class="expand-icon">▶</span>${f.label}</td>`;
+    html += `<td class="hi">${fmtVal(f.key, v)}</td>`;
+    html += `<td>${fmtVal(f.key, calcAvg(f.key,3))}</td>`;
+    html += `<td>${fmtVal(f.key, calcAvg(f.key,5))}</td>`;
+    html += `<td>${fmtVal(f.key, calcAvg(f.key,10))}</td>`;
+    html += `<td style="border-left:1px solid var(--border);padding-left:14px">${fmtGrowth(calcYoy(f.key), f.invert)}</td>`;
+    html += `<td>${fmtGrowth(calcCagr(f.key,3),  f.invert)}</td>`;
+    html += `<td>${fmtGrowth(calcCagr(f.key,5),  f.invert)}</td>`;
+    html += `<td>${fmtGrowth(calcCagr(f.key,10), f.invert)}</td>`;
+    html += '</tr>';
+    // history placeholder row
+    html += `<tr class="history-row" id="hist-${f.key}"><td colspan="9"><div class="history-inner" id="hinner-${f.key}"></div></td></tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById(wrapperId).innerHTML = html;
+}
+
+// ── Toggle history row ─────────────────────────────────────
+function toggleHistory(key, label, invert, wrapperId) {
+  const hrow  = document.getElementById('hist-' + key);
+  const inner = document.getElementById('hinner-' + key);
+  const isOpen = hrow.classList.contains('open'); // capture BEFORE closing
+
+  document.getElementById(wrapperId).querySelectorAll('.metric-row').forEach(r => r.classList.remove('expanded'));
+  document.getElementById(wrapperId).querySelectorAll('.history-row').forEach(r => r.classList.remove('open'));
+
+  if (isOpen) return;
+
+  document.getElementById('mr-' + key)?.classList.add('expanded');
+  hrow.classList.add('open');
+
+  const pctKeys = ['gross_margin','op_margin','net_margin','roic'];
+  const isPct   = pctKeys.includes(key);
+
+  let h = '<div style="display:grid;grid-template-columns:220px 1fr;gap:0">';
+  h += '<div><table style="width:100%"><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
+  sbYears.forEach((year, i) => {
+    const v    = getVal(key, year);
+    const prev = i < sbYears.length-1 ? getVal(key, sbYears[i+1]) : null;
+    let yoy = '\u2014';
+    if (v != null && prev != null && prev !== 0) {
+      const g = (v-prev)/Math.abs(prev), good = invert?g<=0:g>=0;
+      yoy = '<span style="color:'+(good?'var(--green)':'var(--red)')+';font-weight:600">'+(g>=0?'+':'')+(g*100).toFixed(2)+'%</span>';
+    }
+    const bg = i%2===0?'var(--card)':'rgba(83,68,232,.02)';
+    h += '<tr style="background:'+bg+'"><td>'+year+'</td><td>'+fmtVal(key,v)+'</td><td>'+yoy+'</td></tr>';
+  });
+  h += '</tbody></table></div>';
+
+  const cols = sbYears.slice().reverse();
+  const rawVals = cols.map(y=>{const v=getVal(key,y);return v!=null?(isPct?v*100:v):null;});
+  const validV  = rawVals.filter(v=>v!=null);
+  if (validV.length >= 2) {
+    const minV=Math.min(...validV),maxV=Math.max(...validV),range=maxV-minV||0.001;
+    const W=380,H=200,PL=44,PR=10,PT=16,PB=28,plotW=W-PL-PR,plotH=H-PT-PB;
+    const px=i=>PL+i/(cols.length-1||1)*plotW;
+    const py=v=>PT+plotH-(v-minV)/range*plotH;
+    let grid='',xLbls='';
+    [0,0.25,0.5,0.75,1].forEach(t=>{
+      const v=minV+range*t,y=py(v);
+      grid+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(0,0,0,.07)" stroke-width="0.8"/>';
+      const lbl=isPct?v.toFixed(1)+'%':Math.abs(v)>=1000?(v/1000).toFixed(1)+'B':v.toFixed(1);
+      grid+='<text x="'+(PL-4)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" font-size="8" fill="#9ca3af">'+lbl+'</text>';
+    });
+    cols.forEach((yr,i)=>{if(i%3===0||cols.length<=8)xLbls+='<text x="'+px(i).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle" font-size="8" fill="#9ca3af">'+yr+'</text>';});
+    let pathD='',fillD='',firstX=null,lastX=null;
+    rawVals.forEach((v,i)=>{if(v!=null){const x=px(i).toFixed(1),y=py(v).toFixed(1);pathD+=(pathD?'L':'M')+x+','+y;if(!firstX)firstX=x;lastX=x;}});
+    if(firstX)fillD=pathD+' L'+lastX+','+(H-PB)+' L'+firstX+','+(H-PB)+' Z';
+    const col=invert?'#ef4444':'#6366f1',gid='gsb_'+key;
+    const svg='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="max-width:100%">'
+      +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+col+'" stop-opacity="0.18"/><stop offset="100%" stop-color="'+col+'" stop-opacity="0.01"/></linearGradient></defs>'
+      +grid+(fillD?'<path d="'+fillD+'" fill="url(#'+gid+')"/>':'')+(pathD?'<path d="'+pathD+'" stroke="'+col+'" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>':'')+xLbls+'</svg>';
+    h+='<div style="padding:16px 12px 8px;border-left:1px solid var(--border)"><div style="font-size:10px;font-weight:600;color:var(--dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em">'+label+'</div>'+svg+'</div>';
+  }
+  h += '</div>';
+  inner.innerHTML = h;
+}
+
+
+// ── Dynamic segment table ──────────────────────────────────
+
+function buildDynamicSegTable() {
+  if (!sbSegments.length) {
+    // Fallback to static data
+    buildSegTable();
     return;
   }
-  setTimeout(() => {
-    const cols = getVisibleYears();
-    cols.forEach((y, ci) => {
-      const inp = document.querySelector('.ag-input[data-year="'+y+'"][data-field="'+field+'"]');
-      if (!inp) return;
-      const td = inp.parentElement;
-      const og = td.querySelector('div');
-      const row = histData[y] || {};
-      const rp  = histData[cols[ci+1]] || {};
-      const v = row[field], p = rp[field];
-      if (og) og.remove();
-      if (v != null && p != null && p !== 0) {
-        const gr = (v-p)/Math.abs(p)*100;
-        const pos = gr >= 0;
-        const ig = field==='shares_outstanding' ? !pos : pos;
-        const d = document.createElement('div');
-        d.style.cssText = 'font-size:9.5px;font-weight:600;color:'+(ig?'var(--green)':'var(--red)')+';margin-top:1px;text-align:right';
-        d.textContent = (pos?'+':'')+gr.toFixed(1)+'%';
-        td.appendChild(d);
-      }
-    });
-    const flds = histView==='income' ? [...INCOME_FIELDS,...customIncomeFields] : [...RATIO_FIELDS,...customRatioFields];
-    const se = document.getElementById('summary-block');
-    if (se) se.innerHTML = buildSummaryBlock(flds);
-  }, 80);
-}
 
+  const segYears = [...new Set(sbSegments.map(s => s.fiscal_year))].sort((a,b) => b-a);
+  const newestY  = segYears[0];
+  const names    = [...new Set(sbSegments.filter(s => s.fiscal_year === newestY).sort((a,b)=>a.sort_order-b.sort_order).map(s => s.segment_name))];
 
-// ── Custom fields ────────────────────────────────────────
-function addCustomField(section) {
-  const label = prompt('Nome da m\xe9trica:');
-  if (!label) return;
-  const key = 'custom_' + Date.now();
-  const field = { key, label, unit:'', decimals:2, custom:true };
-  if (section === 'income') customIncomeFields.push(field);
-  else customRatioFields.push(field);
-  document.getElementById('hist-body').innerHTML = buildHistBody();
-}
+  // Total positive revenues for % calculation
+  const total = sbSegments
+    .filter(s => s.fiscal_year === newestY && s.revenue > 0)
+    .reduce((sum, s) => sum + parseFloat(s.revenue||0), 0);
 
-function removeCustomField(section, key) {
-  if (section === 'income') customIncomeFields = customIncomeFields.filter(f=>f.key!==key);
-  else customRatioFields = customRatioFields.filter(f=>f.key!==key);
-  document.getElementById('hist-body').innerHTML = buildHistBody();
-}
+  const tbody = document.getElementById('seg-tbody');
+  let html = '';
 
-// ── Segment editor ───────────────────────────────────────
-function buildSegmentEditor() {
-  const availYears = YEARS_LIST.slice(0, 10);
-  const segYearChecks = availYears.map(y =>
-    `<label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:normal;text-transform:none;letter-spacing:0;cursor:pointer">
-      <input type="checkbox" ${segYears.includes(y)?'checked':''}
-        onchange="toggleSegYear(${y},this.checked)" style="width:auto;padding:0;border-radius:3px">
-      ${y}</label>`
-  ).join('');
+  names.forEach((name, idx) => {
+    const row    = sbSegments.find(s => s.fiscal_year === newestY && s.segment_name === name);
+    const val    = row ? parseFloat(row.revenue||0) : null;
+    const isNeg  = name.toLowerCase().includes('incentive');
+    const pct    = (!isNeg && val != null && total > 0) ? val / total : null;
+    const barW   = pct ? Math.round(pct * 100) : 0;
+    const tooltip = SEG_TOOLTIPS[name] || '';
 
-  let allSegNames = [];
-  segYears.forEach(y => {
-    (histSegments[y]||[]).forEach(s => { if (!allSegNames.includes(s.name)) allSegNames.push(s.name); });
-  });
-  if (allSegNames.length === 0) allSegNames = [''];
-
-  const nYears  = segYears.length;
-  const colDef  = `240px repeat(${nYears},130px) 40px`;
-
-  let html = `
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Anos:</span>
-      ${segYearChecks}
-    </div>
-    <div class="seg-editor" style="--seg-years:${nYears}">
-      <div class="seg-row header" style="grid-template-columns:${colDef}">
-        <div class="seg-cell header">Segmento</div>
-        ${segYears.map(y=>`<div class="seg-cell header" style="justify-content:center">${y}</div>`).join('')}
-        <div class="seg-cell header"></div>
-      </div>`;
-
-  allSegNames.forEach((name, idx) => {
-    html += `<div class="seg-row" style="grid-template-columns:${colDef}" data-seg-idx="${idx}">
-      <div class="seg-cell"><input class="seg-name-input" type="text" value="${name}" placeholder="Nome do segmento" oninput="setSegName(${idx},this.value)"></div>`;
-    segYears.forEach(year => {
-      const segs = histSegments[year] || [];
-      const s    = segs.find(s=>s.name===name);
-      const val  = s ? s.revenue : '';
-      html += `<div class="seg-cell"><input class="seg-val-input" type="number" step="any" value="${val!==''?val:''}" placeholder="—" oninput="setSegVal('${name}',${year},this.value)"></div>`;
-    });
-    html += `<div class="seg-cell"><button onclick="removeSegRow(${idx})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0 4px">&times;</button></div></div>`;
-  });
-
-  html += `<button class="add-seg-btn" onclick="addSegRow()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Adicionar segmento</button></div>`;
-
-  return html;
-}
-
-// ── State setters ────────────────────────────────────────
-function setHistVal(year, field, rawVal, isPct) {
-  if (!histData[year]) histData[year] = {};
-  if (rawVal===''||rawVal==null) { histData[year][field]=null; return; }
-  const val = parseFloat(rawVal);
-  if (isNaN(val)) return;
-  histData[year][field] = isPct ? val/100 : val;
-}
-
-function toggleSegYear(year, checked) {
-  if (checked && !segYears.includes(year)) segYears = [...segYears,year].sort((a,b)=>b-a);
-  else if (!checked) segYears = segYears.filter(y=>y!==year);
-  document.getElementById('hist-body').innerHTML = buildHistBody();
-}
-
-function addSegRow() {
-  segYears.forEach(y => {
-    if (!histSegments[y]) histSegments[y]=[];
-    histSegments[y].push({ name:'', revenue:null, sort_order:histSegments[y].length });
-  });
-  document.getElementById('hist-body').innerHTML = buildHistBody();
-}
-
-function removeSegRow(idx) {
-  const nameEl = document.querySelectorAll('[data-seg-idx="'+idx+'"] .seg-name-input')[0];
-  const name   = nameEl ? nameEl.value : '';
-  segYears.forEach(y => { if(histSegments[y]) histSegments[y]=histSegments[y].filter(s=>s.name!==name); });
-  document.getElementById('hist-body').innerHTML = buildHistBody();
-}
-
-function setSegName(idx, newName) {
-  segYears.forEach(y => {
-    if (!histSegments[y]) histSegments[y]=[];
-    if (!histSegments[y][idx]) histSegments[y][idx]={name:'',revenue:null,sort_order:idx};
-    histSegments[y][idx].name = newName;
-  });
-}
-
-function setSegVal(segName, year, rawVal) {
-  if (!histSegments[year]) histSegments[year]=[];
-  let seg = histSegments[year].find(s=>s.name===segName);
-  if (!seg) { seg={name:segName,revenue:null,sort_order:histSegments[year].length}; histSegments[year].push(seg); }
-  seg.revenue = rawVal!==''?parseFloat(rawVal):null;
-}
-
-// ── Save ─────────────────────────────────────────────────
-async function saveHistorico() {
-  if (!histAssetId) { toast('Seleciona um ativo primeiro','error'); return; }
-
-  // Collect DOM values
-  document.querySelectorAll('.ag-input').forEach(inp => {
-    setHistVal(parseInt(inp.dataset.year), inp.dataset.field, inp.value, inp.dataset.pct==='true');
-  });
-  document.querySelectorAll('[data-seg-idx]').forEach(row => {
-    const idx     = parseInt(row.dataset.segIdx);
-    const nameInp = row.querySelector('.seg-name-input');
-    const name    = nameInp ? nameInp.value.trim() : '';
-    if (!name) return;
-    row.querySelectorAll('.seg-val-input').forEach((inp,i) => {
-      const year = segYears[i];
-      if (year) setSegVal(name, year, inp.value);
-    });
-  });
-
-  let errors = 0;
-
-  for (const [yearStr, data] of Object.entries(histData)) {
-    const year = parseInt(yearStr);
-    const hasData = Object.entries(data).some(([k,v])=>v!=null&&!['id','asset_id','fiscal_year','created_at','updated_at'].includes(k));
-    if (!hasData) continue;
-    const payload = { asset_id:histAssetId, fiscal_year:year, ...data };
-    delete payload.id; delete payload.created_at; delete payload.updated_at;
-    const { error } = await sb.from('asset_annual_data').upsert(payload, { onConflict:'asset_id,fiscal_year' });
-    if (error) { console.error(error); errors++; }
-  }
-
-  for (const [yearStr, segs] of Object.entries(histSegments)) {
-    const year = parseInt(yearStr);
-    for (let i=0;i<segs.length;i++) {
-      const s = segs[i];
-      if (!s.name) continue;
-      const { error } = await sb.from('asset_segments').upsert({
-        asset_id:histAssetId, fiscal_year:year, segment_name:s.name, revenue:s.revenue, sort_order:i
-      }, { onConflict:'asset_id,fiscal_year,segment_name' });
-      if (error) { console.error(error); errors++; }
+    // YoY from segments
+    let yoy = null;
+    if (segYears.length >= 2) {
+      const prevRow = sbSegments.find(s => s.fiscal_year === segYears[1] && s.segment_name === name);
+      const prev    = prevRow ? parseFloat(prevRow.revenue||0) : null;
+      if (val != null && prev != null && prev !== 0) yoy = (val - prev) / Math.abs(prev);
     }
-  }
 
-  if (errors===0) toast('Dados guardados!','success');
-  else toast(errors+' erro(s). Verifica a consola.','error');
-}
-function renderHoldings() {
-  const hMap = {};
-  allHoldings.forEach(h=>{ hMap[h.asset_id]=h; });
-  const sorted = [...allAssets].sort((a,b)=>{
-    const ha=hMap[a.id], hb=hMap[b.id];
-    if(ha&&!hb) return -1; if(!ha&&hb) return 1;
-    return a.name.localeCompare(b.name);
+    const nameCell = tooltip
+      ? `<div class="seg-tooltip-wrap">${name}
+           <button class="seg-info-btn">★</button>
+           <div class="seg-tooltip">${tooltip}</div>
+         </div>`
+      : name;
+
+    html += `<tr class="metric-row" onclick="toggleSegHistory('${name}',${idx})" id="seg-mr-${idx}">`;
+    html += `<td><span class="expand-icon">▶</span>${nameCell}</td>`;
+    html += `<td class="${isNeg?'neg':''}">${val!=null?(isNeg?'':'')+Math.abs(val/1000).toFixed(2)+' B $':'—'}</td>`;
+    html += `<td>${pct ? (pct*100).toFixed(1)+'%' : '—'}</td>`;
+    html += `<td class="bar-cell">${pct?'<div class="bar-bg"><div class="bar-fill" style="width:'+barW+'%"></div></div>':''}</td>`;
+    html += `<td class="${yoy!=null?(yoy>=0?'pos':'neg'):''}">${yoy!=null?((yoy>=0?'+':'')+((yoy)*100).toFixed(1)+'%'):'—'}</td>`;
+    html += `</tr>`;
+    // History row
+    html += `<tr class="history-row" id="seghist-${idx}"><td colspan="5"><div class="history-inner" id="seghinner-${idx}"></div></td></tr>`;
   });
-  document.getElementById('tab-content').innerHTML = `
-    <div class="page-hdr">
-      <div><div class="page-title">Carteira</div><div class="page-sub">Define o n&#xba; de a&#xe7;&#xf5;es e pre&#xe7;o m&#xe9;dio para cada posi&#xe7;&#xe3;o</div></div>
-    </div>
-    <div class="table-wrap">
-    ${sorted.length===0 ? `<div class="empty"><p>Nenhum ativo ainda</p><p>Adiciona ativos no separador "Ativos" primeiro</p></div>` : `
-      <table>
-        <thead><tr><th>Ticker</th><th>Nome</th><th>N&#xba; A&#xe7;&#xf5;es</th><th>Pre&#xe7;o M&#xe9;dio</th><th>&#xda;lt. Compra</th><th>Investido</th><th style="text-align:right">A&#xe7;&#xf5;es</th></tr></thead>
-        <tbody>
-        ${sorted.map(a=>{
-          const h=hMap[a.id];
-          const shares=h?+h.num_shares:0;
-          const avg=h?+h.avg_price:0;
-          const invested=shares*avg;
-          const hasPos=h&&shares>0;
-          return `<tr>
-            <td><span class="td-mono" style="font-weight:600">${a.ticker}</span></td>
-            <td>${a.name}</td>
-            <td class="td-mono">${hasPos?fmtShares(shares):'<span class="td-dim">&#x2014;</span>'}</td>
-            <td class="td-mono">${hasPos?fmt(avg,2)+' &#x20ac;':'<span class="td-dim">&#x2014;</span>'}</td>
-            <td class="td-dim" style="font-size:12px">${h&&h.last_purchase_date?formatDate(h.last_purchase_date):'&#x2014;'}</td>
-            <td class="td-mono">${hasPos?'<span class="pos">'+fmtBig(invested)+' &#x20ac;</span>':'<span class="td-dim">&#x2014;</span>'}</td>
-            <td><div class="td-actions"><button class="btn btn-primary btn-sm" onclick="openHolding('${a.id}')">${hasPos?'Editar':'+ Posi&#xe7;&#xe3;o'}</button></div></td>
-          </tr>`;
-        }).join('')}
-        </tbody>
-      </table>`}
-    </div>`;
+
+  tbody.innerHTML = html;
 }
 
-/* ASSET MODAL */
-function openAddAsset() {
-  ['asset-id','f-ticker','f-name','f-isin'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('f-sector').value=''; document.getElementById('f-type').value='Stock';
-  document.getElementById('asset-modal-title').textContent='Adicionar Ativo';
-  document.getElementById('fetch-result').style.display='none';
-  document.getElementById('fetch-error').style.display='none';
-  document.getElementById('asset-modal').classList.add('open');
-}
-function openEditAsset(id) {
-  const a=allAssets.find(x=>x.id===id); if(!a) return;
-  document.getElementById('asset-modal-title').textContent='Editar Ativo';
-  document.getElementById('asset-id').value=a.id;
-  document.getElementById('f-ticker').value=a.ticker;
-  document.getElementById('f-name').value=a.name;
-  document.getElementById('f-isin').value=a.isin||'';
-  document.getElementById('f-sector').value=a.sector||'';
-  document.getElementById('f-type').value=a.asset_type||'Stock';
-  document.getElementById('fetch-result').style.display='none';
-  document.getElementById('fetch-error').style.display='none';
-  document.getElementById('asset-modal').classList.add('open');
-}
-function closeAssetModal() { document.getElementById('asset-modal').classList.remove('open'); }
+function toggleSegHistory(name, idx) {
+  const hrow  = document.getElementById('seghist-' + idx);
+  const isOpen = hrow.classList.contains('open');
 
-async function verifyTicker() {
-  const ticker=document.getElementById('f-ticker').value.trim().toUpperCase();
-  document.getElementById('f-ticker').value=ticker;
-  const rEl=document.getElementById('fetch-result'), eEl=document.getElementById('fetch-error');
-  rEl.style.display='none'; eEl.style.display='none';
-  if(!ticker){eEl.textContent='Introduz um ticker.';eEl.style.display='block';return;}
-  try {
-    const res=await fetch('/api/quote?symbols='+encodeURIComponent(ticker));
-    const data=await res.json();
-    const q=data.quoteResponse?.result?.[0];
-    if(!q) throw new Error('Ticker n\xe3o encontrado no Finnhub');
-    const name=q.shortName||q.longName||ticker;
-    document.getElementById('f-name').value=name;
-    rEl.innerHTML='&#x2713; <b>'+ticker+'</b> &mdash; '+name+' &middot; Pre\xe7o: '+(q.regularMarketPrice||'—');
-    rEl.style.display='block';
-  } catch(e) {
-    eEl.textContent='Ticker n\xe3o encontrado. Para ETFs europeus usa o formato sem sufixo (ex: VWCE em vez de VWCE.DE).';
-    eEl.style.display='block';
-  }
-}
+  // Close all first
+  document.querySelectorAll('#seg-tbody .metric-row').forEach(r => r.classList.remove('expanded'));
+  document.querySelectorAll('#seg-tbody .history-row').forEach(r => r.classList.remove('open'));
 
-async function saveAsset() {
-  const id=document.getElementById('asset-id').value;
-  const ticker=document.getElementById('f-ticker').value.trim().toUpperCase();
-  const name=document.getElementById('f-name').value.trim();
-  const isin=document.getElementById('f-isin').value.trim();
-  const sector=document.getElementById('f-sector').value;
-  const type=document.getElementById('f-type').value;
-  if(!ticker||!name){toast('Ticker e Nome s&#xe3;o obrigat&#xf3;rios','error');return;}
-  const payload={ticker,name,isin:isin||null,sector:sector||null,asset_type:type};
-  let err;
-  if(id){const r=await sb.from('assets').update(payload).eq('id',id);err=r.error;}
-  else{const r=await sb.from('assets').insert(payload);err=r.error;}
-  if(err){toast('Erro: '+err.message,'error');return;}
-  closeAssetModal();
-  toast(id?'Ativo atualizado!':'Ativo adicionado!','success');
-  await loadData();
-}
+  // If already open → just close
+  if (isOpen) return;
 
-async function confirmDeleteAsset(id,ticker) {
-  if(!confirm('Eliminar '+ticker+'?\nIsso vai remover a posicao e da watchlist.')) return;
-  const{error}=await sb.from('assets').delete().eq('id',id);
-  if(error){toast('Erro: '+error.message,'error');return;}
-  toast(ticker+' eliminado','success');
-  await loadData();
-}
+  // Open this one
+  document.getElementById('seg-mr-' + idx).classList.add('expanded');
+  hrow.classList.add('open');
 
-/* HOLDING MODAL */
-function openHolding(assetId) {
-  const a=allAssets.find(x=>x.id===assetId);
-  const h=allHoldings.find(x=>x.asset_id===assetId);
-  document.getElementById('holding-modal-title').textContent=(h?'Editar':'Nova posi\xe7\xe3o')+' \u2014 '+a.ticker;
-  document.getElementById('h-asset-id').value=assetId;
-  document.getElementById('h-holding-id').value=h?.id||'';
-  document.getElementById('h-asset-name').value=a.ticker+' \u2014 '+a.name;
-  document.getElementById('h-shares').value=h?.num_shares||'';
-  document.getElementById('h-avg-price').value=h?.avg_price||'';
-  document.getElementById('h-date').value=h?.last_purchase_date||'';
-  document.getElementById('h-delete-btn').style.display=h?'inline-flex':'none';
-  document.getElementById('holding-modal').classList.add('open');
-}
-function closeHoldingModal(){document.getElementById('holding-modal').classList.remove('open');}
+  const inner = document.getElementById('seghinner-' + idx);
+  const segYrs = [...new Set(sbSegments.map(s => s.fiscal_year))].sort((a,b) => b-a);
 
-async function saveHolding() {
-  const assetId=document.getElementById('h-asset-id').value;
-  const holdingId=document.getElementById('h-holding-id').value;
-  const shares=parseFloat(document.getElementById('h-shares').value);
-  const avgPrice=parseFloat(document.getElementById('h-avg-price').value);
-  const date=document.getElementById('h-date').value||null;
-  if(!shares||shares<=0){toast('N\xba de a\xe7\xf5es inv\xe1lido','error');return;}
-  if(!avgPrice||avgPrice<=0){toast('Pre\xe7o m\xe9dio inv\xe1lido','error');return;}
-  const payload={asset_id:assetId,num_shares:shares,avg_price:avgPrice,last_purchase_date:date,updated_at:new Date().toISOString()};
-  let err;
-  if(holdingId){const r=await sb.from('holdings').update(payload).eq('id',holdingId);err=r.error;}
-  else{const r=await sb.from('holdings').insert(payload);err=r.error;}
-  if(err){toast('Erro: '+err.message,'error');return;}
-  closeHoldingModal();
-  toast('Posi\xe7\xe3o guardada!','success');
-  await loadData();
-}
-
-async function deleteHolding() {
-  const holdingId=document.getElementById('h-holding-id').value;
-  if(!holdingId) return;
-  if(!confirm('Remover esta posi\xe7\xe3o da carteira?')) return;
-  const{error}=await sb.from('holdings').delete().eq('id',holdingId);
-  if(error){toast('Erro: '+error.message,'error');return;}
-  closeHoldingModal();
-  toast('Posi\xe7\xe3o removida','success');
-  await loadData();
-}
-
-/* TOAST */
-function toast(msg,type='success'){
-  const el=document.getElementById('toast');
-  el.textContent=(type==='success'?'\u2713  ':'\u2715  ')+msg;
-  el.className='show '+type;
-  clearTimeout(window._tt);
-  window._tt=setTimeout(()=>el.classList.remove('show'),3000);
-}
-
-/* HELPERS */
-function fmt(n,d=2){if(n==null||isNaN(n))return '\u2014';return n.toLocaleString('pt-PT',{minimumFractionDigits:d,maximumFractionDigits:d});}
-function fmtBig(n){if(n==null||isNaN(n))return '\u2014';const a=Math.abs(n);if(a>=1e9)return (n/1e9).toFixed(2)+' B';if(a>=1e6)return (n/1e6).toFixed(2)+' M';if(a>=1e3)return (n/1e3).toFixed(1)+' K';return n.toFixed(2);}
-function fmtShares(n){return n%1===0?n.toFixed(0):n.toFixed(n<1?4:2);}
-function formatDate(s){if(!s)return '\u2014';return new Date(s).toLocaleDateString('pt-PT');}
-
-document.getElementById('asset-modal').addEventListener('click',function(e){if(e.target===this)closeAssetModal();});
-document.getElementById('holding-modal').addEventListener('click',function(e){if(e.target===this)closeHoldingModal();});
-
-/* ════════════════════════════════════════
-   PDF EXPORT
-   ════════════════════════════════════════ */
-async function exportPDF() {
-  if (!histAssetId) return;
-  const asset = allAssets.find(a => a.id === histAssetId);
-  if (!asset) return;
-
-  const btn = document.getElementById('pdf-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'A gerar...'; }
-
-  const allYears = YEARS_LIST.filter(y => {
-    const d = histData[y];
-    return d && Object.values(d).some(v => v != null && typeof v === 'number');
-  }).sort((a,b) => b - a);
-
-  // ── Helpers ────────────────────────────────────────────
-  const fN = (v,d=2) => (v==null||isNaN(v)) ? '\u2014' : parseFloat(v).toFixed(d);
-  const fP = v => (v==null||isNaN(v)) ? '\u2014' : (parseFloat(v)*100).toFixed(2)+'%';
-  const fD = v => (v==null||isNaN(v)) ? '\u2014' : parseFloat(v).toFixed(2)+' $';
-  const fB = v => { if(v==null||isNaN(v)) return '\u2014'; const a=Math.abs(parseFloat(v)); return a>=1000?(v/1000).toFixed(2)+' B $':parseFloat(v).toFixed(2)+' M $'; };
-
-  function getV(key, yr) {
-    const d = histData[yr]; if (!d) return null;
-    if (d[key]!=null) return parseFloat(d[key]);
-    if (key==='gross_margin' && d.revenue&&d.gross_profit!=null) return d.gross_profit/d.revenue;
-    if (key==='op_margin'    && d.revenue&&d.op_income!=null)    return d.op_income/d.revenue;
-    if (key==='net_margin'   && d.revenue&&d.net_income!=null)   return d.net_income/d.revenue;
-    return null;
-  }
-  function cagrFn(key,n) {
-    if (allYears.length<=n) return null;
-    const e=getV(key,allYears[0]),s=getV(key,allYears[n]);
-    if (e==null||s==null||s<=0||e<=0) return null;
-    return Math.pow(e/s,1/n)-1;
-  }
-  function avgFn(key,n) {
-    const vals=allYears.slice(0,n).map(y=>getV(key,y)).filter(v=>v!=null);
-    return vals.length?vals.reduce((a,v)=>a+v,0)/vals.length:null;
-  }
-  function yoyFn(key) {
-    if(allYears.length<2) return null;
-    const c=getV(key,allYears[0]),p=getV(key,allYears[1]);
-    if(c==null||p==null||p===0) return null;
-    return (c-p)/Math.abs(p);
-  }
-  function fmtKey(key,v) {
-    if(v==null) return '\u2014';
-    const pct=['gross_margin','op_margin','net_margin','roic'];
-    if(pct.includes(key)) return fP(v);
-    if(['eps','dividends_per_share'].includes(key)) return fD(v);
-    if(['current_ratio','lt_debt_capital','debt_equity'].includes(key)) return fN(v,2);
-    if(key==='shares_outstanding') return fN(v,0)+' M';
-    return fB(v);
-  }
-  function grSpan(v,invert=false) {
-    if(v==null||isNaN(v)) return '<span style="color:#9ca3af">\u2014</span>';
-    const pos=v>=0,good=invert?!pos:pos;
-    return '<span style="color:'+(good?'#059669':'#dc2626')+';font-weight:700">'+(pos?'+':'')+(v*100).toFixed(2)+'%</span>';
-  }
-
-  // ── SVG Bar Chart ──────────────────────────────────────
-  function svgBar(key, label, color='#6366f1', fmtFn=fB) {
-    const cols = allYears.slice(0,12).reverse();
-    const vals = cols.map(y => getV(key,y));
-    const hasData = vals.some(v=>v!=null);
-    if (!hasData) return '';
-    const maxV = Math.max(...vals.filter(v=>v!=null).map(Math.abs));
-    if (maxV === 0) return '';
-    const W=480, H=140, PAD={t:20,r:10,b:36,l:52}, BW=Math.floor((W-PAD.l-PAD.r)/cols.length)-3;
-    const plotH = H-PAD.t-PAD.b, plotW = W-PAD.l-PAD.r;
-    const hasNeg = vals.some(v=>v!=null&&v<0);
-    const minV = hasNeg ? Math.min(0,...vals.filter(v=>v!=null)) : 0;
-    const range = maxV - minV || 1;
-    const ys = v => PAD.t + plotH - plotH*(v-minV)/range;
-    const zeroY = ys(0);
-
-    let bars='', xLabels='', yLabels='';
-    const nTicks=4;
-    for(let i=0;i<=nTicks;i++){
-      const val=minV+(maxV-minV)*i/nTicks;
-      const y=ys(val);
-      yLabels+=`<line x1="${PAD.l-4}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="#e5e7eb" stroke-width="0.8"/>`;
-      const lbl=Math.abs(val)>=1000?(val/1000).toFixed(1)+'B':val.toFixed(1);
-      yLabels+=`<text x="${PAD.l-7}" y="${y+4}" text-anchor="end" font-size="8" fill="#9ca3af">${lbl}</text>`;
+  let h = '<table><thead><tr><th>Ano</th><th>Receita (B $)</th><th>YoY</th></tr></thead><tbody>';
+  segYrs.forEach((year, i) => {
+    const cur  = sbSegments.find(s => s.fiscal_year === year && s.segment_name === name);
+    const prev = i < segYrs.length-1 ? sbSegments.find(s => s.fiscal_year === segYrs[i+1] && s.segment_name === name) : null;
+    const v    = cur  ? parseFloat(cur.revenue||0)  : null;
+    const p    = prev ? parseFloat(prev.revenue||0) : null;
+    let yoy = '—';
+    if (v != null && p != null && p !== 0) {
+      const g = (v-p)/Math.abs(p);
+      yoy = '<span style="color:'+(g>=0?'var(--green)':'var(--red)')+';font-weight:600">'+(g>=0?'+':'')+(g*100).toFixed(1)+'%</span>';
     }
-    cols.forEach((yr,i) => {
-      const v = vals[i];
-      const x = PAD.l + i*(BW+3);
-      if(v!=null) {
-        const bH = Math.abs(plotH*(v-0)/(range)||1);
-        const by = v>=0 ? ys(v) : zeroY;
-        const bColor = v>=0 ? color : '#ef4444';
-        bars+=`<rect x="${x}" y="${by}" width="${BW}" height="${Math.abs(ys(0)-ys(v))}" fill="${bColor}" rx="2" opacity="0.85"/>`;
-        // value label on top
-        const lblY = v>=0?by-4:by+Math.abs(ys(0)-ys(v))+10;
-        const lbl=Math.abs(v)>=1000?(v/1000).toFixed(1):v.toFixed(1);
-        if(BW>20) bars+=`<text x="${x+BW/2}" y="${lblY}" text-anchor="middle" font-size="7" fill="${v>=0?color:'#ef4444'}" font-weight="600">${lbl}</text>`;
-      }
-      if(i%2===0||cols.length<=8) {
-        xLabels+=`<text x="${x+BW/2}" y="${H-6}" text-anchor="middle" font-size="8" fill="#6b7280">${yr}</text>`;
-      }
-    });
-    return `<div style="break-inside:avoid;margin-bottom:16px">
-      <div style="font-size:10px;font-weight:700;color:#374151;margin-bottom:4px">${label}</div>
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="max-width:100%">
-        ${yLabels}${bars}${xLabels}
-        ${hasNeg?`<line x1="${PAD.l}" y1="${zeroY}" x2="${W-PAD.r}" y2="${zeroY}" stroke="#374151" stroke-width="1"/>`:''}
-      </svg>
-    </div>`;
-  }
-
-  // ── SVG Line Chart ─────────────────────────────────────
-  function svgLine(series, label) {
-    // series = [{key, label, color, fmtFn}]
-    const cols = allYears.slice(0,12).reverse();
-    const allVals = series.flatMap(s=>cols.map(y=>getV(s.key,y))).filter(v=>v!=null);
-    if(!allVals.length) return '';
-    const maxV=Math.max(...allVals), minV=Math.min(...allVals);
-    const range = maxV-minV||0.01;
-    const W=480,H=130,PAD={t:16,r:10,b:32,l:48};
-    const plotH=H-PAD.t-PAD.b, plotW=W-PAD.l-PAD.r;
-    const px=i=>PAD.l+i/(cols.length-1||1)*plotW;
-    const py=v=>PAD.t+plotH-(v-minV)/range*plotH;
-
-    let paths='', dots='', legend='', gridLines='';
-    const nTicks=4;
-    for(let i=0;i<=nTicks;i++){
-      const v=minV+(maxV-minV)*i/nTicks;
-      const y=py(v);
-      gridLines+=`<line x1="${PAD.l}" y1="${y}" x2="${W-PAD.r}" y2="${y}" stroke="#f3f4f6" stroke-width="1"/>`;
-      const lbl=v>=0.1&&v<=1?(v*100).toFixed(0)+'%':Math.abs(v)>=1000?(v/1000).toFixed(1)+'B':v.toFixed(1);
-      gridLines+=`<text x="${PAD.l-5}" y="${y+3}" text-anchor="end" font-size="8" fill="#9ca3af">${lbl}</text>`;
-    }
-    let xLabels='';
-    cols.forEach((yr,i)=>{
-      if(i%2===0||cols.length<=8)
-        xLabels+=`<text x="${px(i)}" y="${H-5}" text-anchor="middle" font-size="8" fill="#9ca3af">${yr}</text>`;
-    });
-
-    series.forEach(s=>{
-      const pts=cols.map((yr,i)=>{const v=getV(s.key,yr);return v!=null?[px(i),py(v)]:null;});
-      let d='',prev=null;
-      pts.forEach(pt=>{
-        if(pt){d+=(prev?'L':'M')+pt[0].toFixed(1)+','+pt[1].toFixed(1);prev=pt;}
-        else{prev=null;}
-      });
-      if(d) paths+=`<path d="${d}" stroke="${s.color}" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>`;
-      pts.forEach(pt=>{ if(pt) dots+=`<circle cx="${pt[0].toFixed(1)}" cy="${pt[1].toFixed(1)}" r="2.5" fill="${s.color}"/>`; });
-      legend+=`<span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;font-size:8px;color:#374151"><span style="display:inline-block;width:12px;height:2px;background:${s.color};border-radius:1px"></span>${s.label}</span>`;
-    });
-
-    return `<div style="break-inside:avoid;margin-bottom:16px">
-      <div style="font-size:10px;font-weight:700;color:#374151;margin-bottom:4px">${label}</div>
-      <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="max-width:100%">
-        ${gridLines}${paths}${dots}${xLabels}
-      </svg>
-      <div style="margin-top:2px">${legend}</div>
-    </div>`;
-  }
-
-  // ── Data table ─────────────────────────────────────────
-  const COLS10 = allYears.slice(0,10);
-  function buildTable(fields) {
-    let t = `<table style="width:100%;border-collapse:collapse;font-size:9px;margin-bottom:20px">
-      <thead><tr style="background:#312e81;color:#fff">
-        <th style="padding:6px 8px;text-align:left;min-width:130px;font-weight:700">M\xe9trica</th>
-        ${COLS10.map(y=>`<th style="padding:6px 5px;text-align:right;font-weight:700">${y}</th>`).join('')}
-        <th style="padding:6px 5px;text-align:right;border-left:1px solid #4338ca;font-weight:700;color:#a5b4fc">YoY</th>
-        <th style="padding:6px 5px;text-align:right;font-weight:700;color:#a5b4fc">C3A</th>
-        <th style="padding:6px 5px;text-align:right;font-weight:700;color:#a5b4fc">C5A</th>
-        <th style="padding:6px 5px;text-align:right;font-weight:700;color:#a5b4fc">C10A</th>
-      </tr></thead><tbody>`;
-    fields.forEach((f,fi)=>{
-      const bg=fi%2===0?'#fff':'#f8f7ff';
-      t+=`<tr style="background:${bg}"><td style="padding:5px 8px;color:#374151;font-weight:600;border-bottom:1px solid #ede9fe">${f.label}</td>`;
-      COLS10.forEach((yr,ci)=>{
-        const v=getV(f.key,yr), vp=ci<COLS10.length-1?getV(f.key,COLS10[ci+1]):null;
-        let gr='';
-        if(v!=null&&vp!=null&&vp!==0){const g=(v-vp)/Math.abs(vp);const good=f.invert?g<=0:g>=0;gr='<br><span style="font-size:7.5px;color:'+(good?'#059669':'#dc2626')+';font-weight:700">'+(g>=0?'+':'')+(g*100).toFixed(1)+'%</span>';}
-        t+=`<td style="padding:5px 5px;text-align:right;border-bottom:1px solid #ede9fe;font-family:monospace;font-size:9px">${fmtKey(f.key,v)}${gr}</td>`;
-      });
-      t+=`<td style="padding:5px 5px;text-align:right;border-bottom:1px solid #ede9fe;border-left:1px solid #ede9fe;font-family:monospace">${grSpan(yoyFn(f.key),f.invert)}</td>`;
-      t+=`<td style="padding:5px 5px;text-align:right;border-bottom:1px solid #ede9fe;font-family:monospace">${grSpan(cagrFn(f.key,3),f.invert)}</td>`;
-      t+=`<td style="padding:5px 5px;text-align:right;border-bottom:1px solid #ede9fe;font-family:monospace">${grSpan(cagrFn(f.key,5),f.invert)}</td>`;
-      t+=`<td style="padding:5px 5px;text-align:right;border-bottom:1px solid #ede9fe;font-family:monospace">${grSpan(cagrFn(f.key,10),f.invert)}</td>`;
-      t+='</tr>';
-    });
-    return t+'</tbody></table>';
-  }
-
-  const INCOME=[
-    {key:'eps',               label:'EPS ($)',            invert:false},
-    {key:'revenue',           label:'Receita Total',      invert:false},
-    {key:'gross_profit',      label:'Receita Bruta',      invert:false},
-    {key:'op_income',         label:'Rec. Operacional',   invert:false},
-    {key:'net_income',        label:'Rec. L\xedquida',    invert:false},
-    {key:'fcf',               label:'Free Cash Flow',     invert:false},
-    {key:'ebitda',            label:'EBITDA',             invert:false},
-    {key:'dividends_per_share',label:'Dividendo/A\xe7\xe3o',invert:false},
-    {key:'shares_outstanding', label:'A\xe7\xf5es (M)',   invert:true},
-  ];
-  const RATIOS=[
-    {key:'gross_margin',   label:'Gross Margin',      invert:false},
-    {key:'op_margin',      label:'Op. Margin',        invert:false},
-    {key:'net_margin',     label:'Net Margin',        invert:false},
-    {key:'roic',           label:'ROIC',              invert:false},
-    {key:'current_ratio',  label:'Current Ratio',     invert:false},
-    {key:'lt_debt_capital',label:'LT Debt/Capital',   invert:true},
-    {key:'debt_equity',    label:'Debt/Equity',       invert:true},
-  ];
-
-  // Intrinsic value
-  const epsA3=avgFn('eps',3), revC3=cagrFn('revenue',3);
-  const gPct=revC3?revC3*100:10;
-  const VI=epsA3?epsA3*(8.5+2*gPct)*4.4/4.2:null;
-
-  // Summary KPIs
-  const ny=allYears[0];
-  const kpis=[
-    {l:'EPS ('+ny+')',     v:fD(getV('eps',ny))},
-    {l:'Net Margin',       v:getV('net_margin',ny)!=null?fP(getV('net_margin',ny)):(getV('net_income',ny)&&getV('revenue',ny)?fP(getV('net_income',ny)/getV('revenue',ny)):'\u2014')},
-    {l:'ROIC',             v:fP(getV('roic',ny))},
-    {l:'CAGR Rec. 5A',    v:grSpan(cagrFn('revenue',5))},
-    {l:'CAGR EPS 5A',     v:grSpan(cagrFn('eps',5))},
-    {l:'Valor Intr\xednseco',v:VI?fN(VI,2)+' $':'\u2014'},
-  ];
-
-  // Segments
-  const segData=Object.entries(histSegments||{}).sort(([a],[b])=>parseInt(b)-parseInt(a));
-  let segHTML='';
-  if(segData.length){
-    const [segYr,segs]=segData[0];
-    const total=segs.filter(s=>s.revenue>0).reduce((t,s)=>t+parseFloat(s.revenue||0),0);
-    segHTML=`<div style="break-before:page">
-      <div class="sec-hdr"><span class="sec-bar" style="background:#8b5cf6"></span>Receita por Segmento ${segYr}</div>
-      <table style="width:100%;border-collapse:collapse;font-size:9px;margin-bottom:16px">
-        <thead><tr style="background:#4c1d95;color:#fff">
-          <th style="padding:6px 8px;text-align:left">Segmento</th>
-          <th style="padding:6px 8px;text-align:right">Receita</th>
-          <th style="padding:6px 8px;text-align:right">% Total</th>
-          <th style="padding:6px 8px;text-align:left">Visual</th>
-        </tr></thead><tbody>
-        ${segs.map((s,i)=>{
-          const v=parseFloat(s.revenue||0);
-          const pct=v>0&&total>0?(v/total*100).toFixed(1)+'%':'—';
-          const barW=v>0&&total>0?Math.round(v/total*120):0;
-          return `<tr style="background:${i%2===0?'#fff':'#faf5ff'}">
-            <td style="padding:6px 8px;border-bottom:1px solid #ede9fe;font-weight:600;color:#374151">${s.name}</td>
-            <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #ede9fe;font-family:monospace">${fB(v)}</td>
-            <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #ede9fe">${pct}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #ede9fe">
-              <div style="height:8px;background:#e9d5ff;border-radius:4px;overflow:hidden">
-                <div style="height:100%;width:${barW}px;background:#7c3aed;border-radius:4px"></div>
-              </div>
-            </td>
-          </tr>`;
-        }).join('')}
-      </tbody></table>
-    </div>`;
-  }
-
-  const today=new Date().toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'});
-
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#111;background:#fff}
-  @page{size:A4;margin:14mm 12mm 12mm 12mm}
-  @media print{
-    .pg-break{break-before:page}
-    body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  }
-  .sec-hdr{font-size:13px;font-weight:800;color:#1e1b4b;margin:18px 0 8px;display:flex;align-items:center;gap:8px;padding-bottom:5px;border-bottom:2px solid #e0e7ff}
-  .sec-bar{display:inline-block;width:4px;height:16px;border-radius:2px;flex-shrink:0}
-  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
-  .kpi{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:10px 12px}
-  .kpi-l{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#7c3aed;margin-bottom:4px}
-  .kpi-v{font-size:16px;font-weight:800;color:#1e1b4b;font-family:monospace}
-  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-</style>
-</head><body>
-
-<!-- ═══ COVER ═══════════════════════════════════════════ -->
-<div style="background:linear-gradient(135deg,#1e1b4b 0%,#3730a3 50%,#6366f1 100%);color:#fff;padding:32px 28px 28px;border-radius:10px;margin-bottom:22px;position:relative;overflow:hidden">
-  <div style="position:absolute;right:-30px;top:-30px;width:180px;height:180px;background:rgba(255,255,255,.06);border-radius:50%"></div>
-  <div style="position:absolute;right:40px;top:50px;width:90px;height:90px;background:rgba(255,255,255,.04);border-radius:50%"></div>
-  <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:3px;color:#a5b4fc;margin-bottom:10px">Follow Stocks \xb7 Relat\xf3rio de An\xe1lise</div>
-  <div style="font-size:48px;font-weight:900;letter-spacing:-2px;line-height:1">${asset.ticker}</div>
-  <div style="font-size:20px;color:#c7d2fe;margin-top:4px;font-weight:500">${asset.name}</div>
-  <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-    ${asset.sector?`<span style="background:rgba(255,255,255,.15);backdrop-filter:blur(4px);padding:3px 10px;border-radius:99px;font-size:9px;font-weight:700;letter-spacing:.5px">${asset.sector}</span>`:''}
-    ${asset.asset_type?`<span style="background:rgba(255,255,255,.15);padding:3px 10px;border-radius:99px;font-size:9px;font-weight:700;letter-spacing:.5px">${asset.asset_type}</span>`:''}
-    <span style="background:rgba(255,255,255,.15);padding:3px 10px;border-radius:99px;font-size:9px;font-weight:700">${allYears.length} anos de dados (${allYears[allYears.length-1]}\u2013${allYears[0]})</span>
-  </div>
-  <div style="position:absolute;right:24px;bottom:20px;font-size:9px;color:#818cf8;font-weight:500">${today}</div>
-</div>
-
-<!-- ═══ KPI SUMMARY ══════════════════════════════════════ -->
-<div class="kpi-grid">
-  ${kpis.map(k=>`<div class="kpi"><div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div></div>`).join('')}
-</div>
-
-<!-- ═══ INTRINSIC VALUE ══════════════════════════════════ -->
-${VI!=null?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-  <div style="background:linear-gradient(135deg,#eef2ff,#ddd6fe);border:1px solid #c7d2fe;border-radius:10px;padding:14px 18px">
-    <div style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#4338ca;margin-bottom:8px">&#9733; Valor Intr\xednseco · Graham</div>
-    <div style="font-size:26px;font-weight:900;color:#1e1b4b;font-family:monospace">${fN(VI,2)} $</div>
-    <div style="margin-top:8px;font-size:9px;color:#6366f1;line-height:1.6">
-      V = L \xd7 (8,5 + 2g) \xd7 4,4 / Y<br>
-      L = ${fN(epsA3,2)}$ (EPS m\xe9d 3A) \xb7 g = ${fN(gPct,2)}% (CAGR rec. 3A) \xb7 Y = 4,2%
-    </div>
-  </div>
-  <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #6ee7b7;border-radius:10px;padding:14px 18px">
-    <div style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#059669;margin-bottom:8px">&#128737; Com Margem de Seguran\xe7a \u221215%</div>
-    <div style="font-size:26px;font-weight:900;color:#064e3b;font-family:monospace">${fN(VI*0.85,2)} $</div>
-    <div style="margin-top:8px;font-size:9px;color:#10b981;line-height:1.6">
-      ${fN(VI,2)} \xd7 0,85 = ${fN(VI*0.85,2)} $<br>
-      Desconto de seguran\xe7a de 15% aplicado
-    </div>
-  </div>
-</div>`:''}
-
-<!-- ═══ CHARTS ════════════════════════════════════════════ -->
-<div class="sec-hdr"><span class="sec-bar" style="background:#6366f1"></span>Gr\xe1ficos Hist\xf3ricos</div>
-<div class="chart-grid">
-  ${svgBar('revenue','Receita Total','#6366f1')}
-  ${svgBar('eps','EPS por A\xe7\xe3o','#0ea5e9',fD)}
-</div>
-<div class="chart-grid">
-  ${svgBar('net_income','Receita L\xedquida','#10b981')}
-  ${svgBar('fcf','Free Cash Flow','#f59e0b')}
-</div>
-${svgLine([
-  {key:'op_margin',   label:'Op. Margin',  color:'#6366f1'},
-  {key:'net_margin',  label:'Net Margin',  color:'#10b981'},
-  {key:'gross_margin',label:'Gross Margin',color:'#f59e0b'},
-],'Margens ao Longo dos Anos')}
-<div class="chart-grid">
-  ${svgLine([{key:'roic',label:'ROIC',color:'#8b5cf6'}],'ROIC')}
-  ${svgBar('dividends_per_share','Dividendos por A\xe7\xe3o','#ec4899',fD)}
-</div>
-
-<!-- ═══ INCOME TABLE ════════════════════════════════════ -->
-<div class="pg-break">
-<div class="sec-hdr"><span class="sec-bar" style="background:#6366f1"></span>Dados Gerais</div>
-${buildTable(INCOME)}
-
-<!-- ═══ RATIOS TABLE ════════════════════════════════════ -->
-<div class="sec-hdr"><span class="sec-bar" style="background:#8b5cf6"></span>R\xe1cios e Margens</div>
-${buildTable(RATIOS)}
-</div>
-
-${segHTML}
-
-<!-- ═══ FOOTER ═══════════════════════════════════════════ -->
-<div style="margin-top:24px;padding-top:10px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
-  <div style="font-size:8px;color:#9ca3af;font-weight:600">Follow Stocks \xb7 ${today}</div>
-  <div style="font-size:8px;color:#9ca3af">Dados para fins informativos. N\xe3o constitui aconselhamento financeiro.</div>
-</div>
-
-</body></html>`;
-
-  const win = window.open('','_blank','width=1000,height=900');
-  win.document.write(html);
-  win.document.close();
-  win.onload = () => setTimeout(()=>{ win.focus(); win.print(); }, 500);
-
-  if(btn){ btn.disabled=false; btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Exportar PDF'; }
-  toast('Relat\xf3rio pronto! Escolhe "Guardar como PDF" na janela de impress\xe3o.','success');
+    const bg = i%2===0?'#fff':'rgba(83,68,232,.02)';
+    h += '<tr style="background:'+bg+'"><td>'+year+'</td><td>'+(v!=null?Math.abs(v/1000).toFixed(3)+' B $':'—')+'</td><td>'+yoy+'</td></tr>';
+  });
+  h += '</tbody></table>';
+  inner.innerHTML = h;
 }
 
+// ── Init ──────────────────────────────────────────────────
+async function init() {
+  // 1. Render static data immediately so page is never empty
+  buildSummaryTableStatic(INCOME_KEYS_STATIC, 'dados-gerais-wrap');
+  buildSummaryTableStatic(RATIO_KEYS_STATIC,  'racios-wrap');
+  buildSegTable(); // static fallback
+
+  // 2. Try to load from Supabase and replace if data exists
+  await loadHistoricalData();
+
+  if (sbYears.length) {
+    buildSummaryTable(INCOME_KEYS, 'dados-gerais-wrap');
+    buildSummaryTable(RATIO_KEYS,  'racios-wrap');
+    buildDynamicSegTable();
+  }
+
+  buildCharts();
+  fetchPrice();
+  fetchMetrics();
+  setInterval(fetchPrice, 30000);
+}
+
+init();
+
+// Sidebar active highlight on scroll
+const navLinks = document.querySelectorAll('.side-nav a');
+const sections = ['intrinsic','metrics','dados-gerais','racios','charts-rev','charts-margins','dividends','fcf','annual','segments','ratios-annual'];
+
+window.addEventListener('scroll', () => {
+  let current = sections[0];
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top < 100) current = id;
+  });
+  navLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+}, { passive: true });
 </script>
 </body>
 </html>
