@@ -995,7 +995,114 @@ function buildCharts() {
   });
 }
 
-// ── Supabase historical data ───────────────────────────────
+// ── Static data keys (for fallback) ───────────────────────
+const INCOME_KEYS_STATIC = [
+  { key:'eps',   label:'EPS',             data:EPS,     gr:EPS_GR, fmt:fmtD,               invert:false },
+  { key:'rev',   label:'Receita Total',   data:REV,     gr:REV_GR, fmt:v=>fmtB(v)+' B $',  invert:false },
+  { key:'ni',    label:'Receita Líquida', data:NET_INC, gr:NET_GR, fmt:v=>fmtB(v)+' B $',  invert:false },
+  { key:'fcf',   label:'Free Cash Flow',  data:FCF,     gr:FCF_GR, fmt:v=>fmtB(v)+' B $',  invert:false },
+  { key:'ebitda',label:'EBITDA',          data:EBITDA,  gr:null,   fmt:v=>fmtB(v)+' B $',  invert:false },
+  { key:'divs',  label:'Dividendos/Ação', data:DIVS,    gr:DIVS_GR,fmt:fmtD,               invert:false },
+  { key:'shr',   label:'Ações (M)',       data:SHARES,  gr:null,   fmt:v=>v?v.toFixed(0):'—',invert:true },
+];
+
+const RATIO_KEYS_STATIC = [
+  { key:'opm',  label:'Margem Operacional', data:OP_M,   isPct:true, invert:false },
+  { key:'nm',   label:'Margem Líquida',     data:NET_M,  isPct:true, invert:false },
+  { key:'roic', label:'ROIC',               data:ROIC,   isPct:true, invert:false },
+  { key:'cr',   label:'Current Ratio',      data:CUR_R,  isPct:false,invert:false },
+  { key:'ltd',  label:'LT Debt / Capital',  data:LT_D,   isPct:false,invert:true  },
+  { key:'de',   label:'Debt / Equity',      data:DEBT_E, isPct:false,invert:true  },
+];
+
+function cagrStatic(data, n) {
+  if (data.length <= n) return null;
+  const end = data[0], start = data[n];
+  if (!end || !start || start <= 0 || end <= 0) return null;
+  return Math.pow(end / start, 1/n) - 1;
+}
+function avgStatic(data, n) {
+  const vals = data.slice(0, n).filter(v => v != null);
+  return vals.length ? vals.reduce((s,v) => s+v, 0) / vals.length : null;
+}
+function yoyStatic(data) {
+  if (data.length < 2 || data[0]==null || data[1]==null || data[1]===0) return null;
+  return (data[0] - data[1]) / Math.abs(data[1]);
+}
+
+function fmtGrowthStatic(v, invert=false) {
+  if (v == null) return '<span style="color:var(--muted)">—</span>';
+  const pos  = v >= 0;
+  const good = invert ? !pos : pos;
+  return '<span style="color:' + (good?'var(--green)':'var(--red)') + ';font-weight:600">' + (pos?'+':'') + (v*100).toFixed(2) + '%</span>';
+}
+
+function buildSummaryTableStatic(keys, wrapperId) {
+  let html = '<table class="avg-table"><thead><tr>'
+    + '<th></th><th>ÚLT. ANO</th><th>MÉD. 3A</th><th>MÉD. 5A</th><th>MÉD. 10A</th>'
+    + '<th style="border-left:1px solid var(--border);padding-left:14px">YoY</th>'
+    + '<th>CAGR 3A</th><th>CAGR 5A</th><th>CAGR 10A</th>'
+    + '</tr></thead><tbody>';
+
+  keys.forEach((f, fi) => {
+    const d   = f.data;
+    const fmt = f.fmt || (v => v != null ? (f.isPct ? (v*100).toFixed(2)+'%' : v.toFixed(2)) : '—');
+    const a3  = avgStatic(d,3),  a5 = avgStatic(d,5),  a10 = avgStatic(d,10);
+    const c3  = cagrStatic(d,3), c5 = cagrStatic(d,5), c10 = cagrStatic(d,10);
+    const yoy = yoyStatic(d);
+    const bg  = fi%2===0 ? 'var(--card)' : 'rgba(0,0,0,.02)';
+
+    html += `<tr class="metric-row" onclick="toggleHistoryStatic('${f.key}','${f.label}',${f.invert},'${wrapperId}')" style="background:${bg}">`;
+    html += `<td><span class="expand-icon">▶</span>${f.label}</td>`;
+    html += `<td class="hi">${fmt(d[0])}</td>`;
+    html += `<td>${fmt(a3)}</td><td>${fmt(a5)}</td><td>${fmt(a10)}</td>`;
+    html += `<td style="border-left:1px solid var(--border);padding-left:14px">${fmtGrowthStatic(yoy,f.invert)}</td>`;
+    html += `<td>${fmtGrowthStatic(c3,f.invert)}</td>`;
+    html += `<td>${fmtGrowthStatic(c5,f.invert)}</td>`;
+    html += `<td>${fmtGrowthStatic(c10,f.invert)}</td>`;
+    html += '</tr>';
+    html += `<tr class="history-row" id="hist-${f.key}"><td colspan="9"><div class="history-inner" id="hinner-${f.key}"></div></td></tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById(wrapperId).innerHTML = html;
+}
+
+function toggleHistoryStatic(key, label, invert, wrapperId) {
+  const row   = document.querySelector(`#${wrapperId} [onclick*="'${key}'"]`);
+  const hrow  = document.getElementById('hist-' + key);
+  const inner = document.getElementById('hinner-' + key);
+  const isOpen = hrow.classList.contains('open');
+
+  document.getElementById(wrapperId).querySelectorAll('.metric-row').forEach(r => r.classList.remove('expanded'));
+  document.getElementById(wrapperId).querySelectorAll('.history-row').forEach(r => r.classList.remove('open'));
+
+  if (isOpen) return;
+
+  // Find the field data
+  const allKeys = [...INCOME_KEYS_STATIC, ...RATIO_KEYS_STATIC];
+  const f = allKeys.find(k => k.key === key);
+  if (!f) return;
+
+  row?.classList.add('expanded');
+  hrow.classList.add('open');
+
+  const fmt = f.fmt || (v => v != null ? (f.isPct ? (v*100).toFixed(2)+'%' : v.toFixed(2)) : '—');
+  let h = '<table><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
+  f.data.forEach((v, i) => {
+    const prev = f.data[i+1];
+    let yoy = '—';
+    if (v != null && prev != null && prev !== 0) {
+      const g = (v-prev)/Math.abs(prev);
+      const good = f.invert ? g<=0 : g>=0;
+      yoy = '<span style="color:' + (good?'var(--green)':'var(--red)') + ';font-weight:600">' + (g>=0?'+':'') + (g*100).toFixed(2) + '%</span>';
+    }
+    const bg = i%2===0?'#fff':'rgba(83,68,232,.02)';
+    h += `<tr style="background:${bg}"><td>${YEARS[i]}</td><td>${fmt(v)}</td><td>${yoy}</td></tr>`;
+  });
+  h += '</tbody></table>';
+  inner.innerHTML = h;
+}
 let sbAnnual   = [];  // rows from asset_annual_data
 let sbSegments = [];  // rows from asset_segments
 let sbYears    = [];  // sorted desc
@@ -1282,18 +1389,18 @@ function toggleSegHistory(name, idx) {
 
 // ── Init ──────────────────────────────────────────────────
 async function init() {
+  // 1. Render static data immediately so page is never empty
+  buildSummaryTableStatic(INCOME_KEYS_STATIC, 'dados-gerais-wrap');
+  buildSummaryTableStatic(RATIO_KEYS_STATIC,  'racios-wrap');
+  buildSegTable(); // static fallback
+
+  // 2. Try to load from Supabase and replace if data exists
   await loadHistoricalData();
 
-  // Build dynamic tables from Supabase data
   if (sbYears.length) {
-    buildSummaryTable(INCOME_KEYS, 'dados-gerais-wrap', 'Dados Gerais', 'Do Supabase');
-    buildSummaryTable(RATIO_KEYS,  'racios-wrap',       'Rácios',       'Do Supabase');
+    buildSummaryTable(INCOME_KEYS, 'dados-gerais-wrap');
+    buildSummaryTable(RATIO_KEYS,  'racios-wrap');
     buildDynamicSegTable();
-  } else {
-    // Fallback to static data
-    buildAnnualTable();
-    buildRatiosTable();
-    buildSegTable();
   }
 
   buildCharts();
