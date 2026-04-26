@@ -11,9 +11,9 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:          #07070e;
-      --card:        #0c0c18;
-      --card-hover:  #10101f;
+      --bg:          #f5f5fa;
+      --card:        #ffffff;
+      --card-hover:  #f0f0f7;
       --border:      rgba(255,255,255,0.06);
       --border-h:    rgba(255,255,255,0.11);
       --text:        #e4e4f0;
@@ -22,7 +22,7 @@
       --green:       #0fe07a;
       --red:         #ff3d58;
       --accent:      #6153f5;
-      --accent-dim:  rgba(97,83,245,0.15);
+      --accent-dim:  rgba(97,83,245,0.08);
     }
 
     body {
@@ -148,8 +148,8 @@
       text-transform: uppercase;
       letter-spacing: .1em;
       color: var(--green);
-      background: rgba(15,224,122,0.07);
-      border: 1px solid rgba(15,224,122,0.18);
+      background: rgba(10,153,85,0.08);
+      border: 1px solid rgba(10,153,85,0.25);
       padding: 3px 9px;
       border-radius: 99px;
     }
@@ -238,8 +238,8 @@
       transition: opacity .2s;
     }
 
-    .asset-card.pos::before { background: radial-gradient(ellipse at 50% 0%, rgba(15,224,122,.05) 0%, transparent 70%); }
-    .asset-card.neg::before { background: radial-gradient(ellipse at 50% 0%, rgba(255,61,88,.05) 0%, transparent 70%); }
+    .asset-card.pos::before { background: radial-gradient(ellipse at 50% 0%, rgba(10,153,85,.04) 0%, transparent 70%); }
+    .asset-card.neg::before { background: radial-gradient(ellipse at 50% 0%, rgba(217,45,72,.04) 0%, transparent 70%); }
 
     .asset-card:hover {
       background: var(--card-hover);
@@ -420,7 +420,7 @@
       align-items: flex-start;
       gap: 10px;
       background: var(--accent-dim);
-      border: 1px solid rgba(97,83,245,.3);
+      border: 1px solid rgba(97,83,245,.25);
       border-radius: 10px;
       padding: 12px 16px;
       margin-bottom: 20px;
@@ -430,7 +430,7 @@
     }
 
     .cfg-notice code {
-      background: rgba(255,255,255,.07);
+      background: rgba(0,0,0,.05);
       padding: 1px 6px;
       border-radius: 4px;
       font-family: 'JetBrains Mono', monospace;
@@ -439,8 +439,8 @@
     }
 
     /* ─── PRICE FLASH ───────────────────────────── */
-    @keyframes flash-up   { 0%,100%{background:transparent} 30%{background:rgba(15,224,122,.15)} }
-    @keyframes flash-down { 0%,100%{background:transparent} 30%{background:rgba(255,61,88,.15)} }
+    @keyframes flash-up   { 0%,100%{background:transparent} 30%{background:rgba(10,153,85,.15)} }
+    @keyframes flash-down { 0%,100%{background:transparent} 30%{background:rgba(217,45,72,.15)} }
     .flash-up   { animation: flash-up .6s ease; border-radius: 4px; }
     .flash-down { animation: flash-down .6s ease; border-radius: 4px; }
 
@@ -479,18 +479,18 @@
       white-space: nowrap;
     }
 
-    .lst-filter:hover { color: var(--text); background: rgba(255,255,255,.04); }
-    .lst-filter.active { color: var(--text); background: rgba(255,255,255,.08); }
+    .lst-filter:hover { color: var(--text); background: rgba(0,0,0,.03); }
+    .lst-filter.active { color: var(--text); background: rgba(0,0,0,.06); }
 
     .lst-count {
       font-size: 11px;
       font-family: 'JetBrains Mono', monospace;
-      background: rgba(255,255,255,.07);
+      background: rgba(0,0,0,.05);
       padding: 1px 7px;
       border-radius: 99px;
       color: var(--dim);
     }
-    .lst-filter.active .lst-count { color: var(--text); background: rgba(255,255,255,.12); }
+    .lst-filter.active .lst-count { color: var(--text); background: rgba(0,0,0,.08); }
 
     .lst-controls {
       display: flex;
@@ -588,12 +588,12 @@
     .lst-table th.col-action { width: 48px; }
 
     .lst-table tbody tr {
-      border-bottom: 1px solid rgba(255,255,255,.03);
+      border-bottom: 1px solid rgba(0,0,0,.03);
       transition: background .12s;
       cursor: pointer;
     }
     .lst-table tbody tr:last-child { border-bottom: none; }
-    .lst-table tbody tr:hover { background: rgba(255,255,255,.03); }
+    .lst-table tbody tr:hover { background: rgba(0,0,0,.03); }
 
     .lst-table td {
       padding: 13px 14px;
@@ -639,7 +639,7 @@
       border-radius: 5px;
       font-size: 11px;
       font-weight: 500;
-      background: rgba(255,255,255,.05);
+      background: rgba(0,0,0,.04);
       color: var(--dim);
       border: 1px solid var(--border);
     }
@@ -654,7 +654,7 @@
       width: 48px;
       height: 11px;
       border-radius: 3px;
-      background: linear-gradient(90deg, var(--card) 25%, rgba(255,255,255,.04) 50%, var(--card) 75%);
+      background: linear-gradient(90deg, var(--card) 25%, rgba(0,0,0,.04) 50%, var(--card) 75%);
       background-size: 300% 100%;
       animation: sk 1.6s ease infinite;
     }
@@ -672,7 +672,7 @@
       font-size: 13px;
       transition: all .15s;
     }
-    .action-btn:hover { background: rgba(255,255,255,.07); color: var(--text); }
+    .action-btn:hover { background: rgba(0,0,0,.05); color: var(--text); }
     .action-btn.in-portfolio {
       background: rgba(15,224,122,.1);
       border-color: rgba(15,224,122,.25);
