@@ -65,7 +65,7 @@
     .tag.country { color: var(--amber); border-color: rgba(245,183,49,.25); background: rgba(245,183,49,.07); }
 
     /* ── MAIN ───────────────────────────────── */
-    main { max-width: 1240px; margin: 0 auto; padding: 32px 28px 100px; }
+    main { max-width: 1400px; margin: 0 auto; padding: 36px 40px 100px; }
 
     /* ── HERO ───────────────────────────────── */
     .hero {
@@ -85,7 +85,7 @@
     }
 
     .hero-name {
-      font-size: 36px; font-weight: 600;
+      font-size: 40px; font-weight: 600;
       letter-spacing: -.025em;
       margin-bottom: 6px;
       background: linear-gradient(135deg, #e4e4f0 0%, #8888a0 100%);
@@ -176,8 +176,8 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 24px 28px;
-      margin-bottom: 14px;
+      padding: 26px 32px;
+      margin-bottom: 16px;
     }
 
     .card-hdr {
@@ -212,7 +212,7 @@
 
     .metric-val {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 20px; font-weight: 500;
+      font-size: 22px; font-weight: 500;
       letter-spacing: -.02em;
     }
 
@@ -222,7 +222,7 @@
     .avg-table th {
       font-size: 9.5px; font-weight: 700;
       text-transform: uppercase; letter-spacing: .09em;
-      color: var(--muted); padding: 0 14px 14px 0;
+      color: var(--muted); padding: 0 16px 14px 0;
       text-align: right;
     }
     .avg-table th:first-child { text-align: left; padding-left: 0; }
@@ -285,13 +285,13 @@
     .charts-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 14px;
+      gap: 16px;
+      margin-bottom: 16px;
     }
 
     .ch-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
     .ch-sub   { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
-    .ch-wrap  { position: relative; height: 200px; }
+    .ch-wrap  { position: relative; height: 230px; }
 
     .legend {
       display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap;
@@ -335,12 +335,48 @@
     .pos { color: var(--green); }
     .neg { color: var(--red); }
 
+    /* ── DESKTOP LAYOUT WITH SIDEBAR NAV ───── */
+    .page-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .side-nav {
+      position: sticky;
+      top: 72px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .side-nav-section {
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--muted); padding: 0 8px;
+      margin: 12px 0 4px;
+    }
+    .side-nav-section:first-child { margin-top: 0; }
+
+    .side-nav a {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; border-radius: 8px;
+      font-size: 12.5px; font-weight: 500;
+      color: var(--dim); text-decoration: none;
+      transition: all .15s;
+    }
+    .side-nav a:hover { color: var(--text); background: rgba(0,0,0,.05); }
+    .side-nav a.active { color: var(--accent); background: rgba(97,83,245,.08); font-weight: 600; }
+
+    .side-nav-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor; flex-shrink: 0; opacity: .5;
+    }
+
     @media (max-width: 900px) {
-      .hero { grid-template-columns: 1fr; }
-      .hero-price-block { text-align: left; }
-      .metrics-grid { grid-template-columns: repeat(3,1fr); }
-      .charts-2 { grid-template-columns: 1fr; }
-      .intrinsic-banner { grid-template-columns: 1fr; }
+      .page-layout { grid-template-columns: 1fr; }
+      .side-nav { display: none; }
     }
   </style>
 </head>
@@ -360,7 +396,7 @@
 
 <main>
 
-  <!-- HERO -->
+  <!-- HERO (full width above layout) -->
   <div class="hero">
     <div>
       <div class="hero-ticker">V · VISA INC.</div>
@@ -374,6 +410,31 @@
     </div>
   </div>
 
+  <div class="page-layout">
+
+  <!-- SIDEBAR NAV -->
+  <aside class="side-nav">
+    <div class="side-nav-section">Visão Geral</div>
+    <a href="#intrinsic"><div class="side-nav-dot"></div>Valor Intrínseco</a>
+    <a href="#metrics"><div class="side-nav-dot"></div>Key Metrics</a>
+    <div class="side-nav-section">Crescimento</div>
+    <a href="#dados-gerais"><div class="side-nav-dot"></div>Dados Gerais</a>
+    <a href="#racios"><div class="side-nav-dot"></div>Rácios e Margens</a>
+    <div class="side-nav-section">Histórico</div>
+    <a href="#charts-rev"><div class="side-nav-dot"></div>Receita & EPS</a>
+    <a href="#charts-margins"><div class="side-nav-dot"></div>Margens & ROIC</a>
+    <a href="#dividends"><div class="side-nav-dot"></div>Dividendos</a>
+    <a href="#fcf"><div class="side-nav-dot"></div>Free Cash Flow</a>
+    <div class="side-nav-section">Detalhe</div>
+    <a href="#annual"><div class="side-nav-dot"></div>Detalhes Anuais</a>
+    <a href="#segments"><div class="side-nav-dot"></div>Segmentos</a>
+    <a href="#ratios-annual"><div class="side-nav-dot"></div>Rácios Anuais</a>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div>
+
+  <div id="intrinsic"></div>
   <!-- INTRINSIC VALUE -->
   <div class="intrinsic-banner">
     <div class="intr-card base">
@@ -410,6 +471,7 @@
     </span>
   </div>
 
+  <div id="metrics"></div>
   <!-- KEY METRICS -->
   <div class="metrics-grid">
     <div class="metric-cell">
@@ -438,51 +500,8 @@
     </div>
   </div>
 
-  <!-- CAGR SUMMARY PILLS -->
-  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px">
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:8px">EPS CAGR</div>
-      <div style="display:flex;gap:8px;align-items:baseline">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:var(--green)">+15.2%</span>
-        <span style="font-size:11px;color:var(--muted)">10A</span>
-      </div>
-      <div style="font-size:11px;color:var(--dim);margin-top:4px;font-family:'JetBrains Mono',monospace">5A: +16.9% · 3A: +15.1%</div>
-    </div>
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:8px">RECEITA CAGR</div>
-      <div style="display:flex;gap:8px;align-items:baseline">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:var(--green)">+11.2%</span>
-        <span style="font-size:11px;color:var(--muted)">10A</span>
-      </div>
-      <div style="font-size:11px;color:var(--dim);margin-top:4px;font-family:'JetBrains Mono',monospace">5A: +12.9% · 3A: +10.9%</div>
-    </div>
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:8px">REC. BRUTA CAGR</div>
-      <div style="display:flex;gap:8px;align-items:baseline">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:var(--green)">+11.2%</span>
-        <span style="font-size:11px;color:var(--muted)">10A</span>
-      </div>
-      <div style="font-size:11px;color:var(--dim);margin-top:4px;font-family:'JetBrains Mono',monospace">5A: +12.9% · 3A: +10.9%</div>
-    </div>
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:8px">REC. LÍQ. CAGR</div>
-      <div style="display:flex;gap:8px;align-items:baseline">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:var(--green)">+10.2%</span>
-        <span style="font-size:11px;color:var(--muted)">10A</span>
-      </div>
-      <div style="font-size:11px;color:var(--dim);margin-top:4px;font-family:'JetBrains Mono',monospace">5A: +13.0% · 3A: +10.3%</div>
-    </div>
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
-      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:8px">FCF CAGR</div>
-      <div style="display:flex;gap:8px;align-items:baseline">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:var(--green)">+13.3%</span>
-        <span style="font-size:11px;color:var(--muted)">10A</span>
-      </div>
-      <div style="font-size:11px;color:var(--dim);margin-top:4px;font-family:'JetBrains Mono',monospace">5A: +17.3% · 3A: +6.5%</div>
-    </div>
-  </div>
-
-  <!-- DADOS GERAIS (averages + CAGR) -->
+  <div id="dados-gerais"></div>
+  <!-- DADOS GERAIS -->
   <div class="card">
     <div class="card-hdr">
       <div>
@@ -494,74 +513,75 @@
       <thead><tr>
         <th></th>
         <th>ÚLT. ANO</th>
-        <th>MÉD. 10A</th>
-        <th>MÉD. 5A</th>
         <th>MÉD. 3A</th>
-        <th style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">YoY</th>
-        <th>CAGR 10A</th>
-        <th>CAGR 5A</th>
+        <th>MÉD. 5A</th>
+        <th>MÉD. 10A</th>
+        <th style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">YoY</th>
         <th>CAGR 3A</th>
+        <th>CAGR 5A</th>
+        <th>CAGR 10A</th>
       </tr></thead>
       <tbody>
         <tr>
           <td>EPS</td>
           <td class="hi">9.55 $</td>
-          <td>5.49 $</td>
-          <td>7.41 $</td>
           <td>8.58 $</td>
-          <td class="pos" style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">+8.40%</td>
-          <td class="pos">+15.20%</td>
-          <td class="pos">+16.87%</td>
+          <td>7.41 $</td>
+          <td>5.49 $</td>
+          <td class="pos" style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">+8.40%</td>
           <td class="pos">+15.12%</td>
+          <td class="pos">+16.87%</td>
+          <td class="pos">+15.20%</td>
         </tr>
         <tr>
           <td>Receita Total</td>
           <td class="hi">40.0 B $</td>
-          <td>26.1 B $</td>
-          <td>32.4 B $</td>
           <td>36.2 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">+11.34%</td>
-          <td class="pos">+11.16%</td>
-          <td class="pos">+12.86%</td>
+          <td>32.4 B $</td>
+          <td>26.1 B $</td>
+          <td class="pos" style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">+11.34%</td>
           <td class="pos">+10.92%</td>
+          <td class="pos">+12.86%</td>
+          <td class="pos">+11.16%</td>
         </tr>
         <tr>
           <td>Receita Bruta</td>
           <td class="hi">40.0 B $</td>
-          <td>26.1 B $</td>
-          <td>32.4 B $</td>
           <td>36.2 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">+11.34%</td>
-          <td class="pos">+11.16%</td>
-          <td class="pos">+12.86%</td>
+          <td>32.4 B $</td>
+          <td>26.1 B $</td>
+          <td class="pos" style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">+11.34%</td>
           <td class="pos">+10.92%</td>
+          <td class="pos">+12.86%</td>
+          <td class="pos">+11.16%</td>
         </tr>
         <tr>
           <td>Receita Líquida</td>
           <td class="hi">20.1 B $</td>
-          <td>13.0 B $</td>
-          <td>16.9 B $</td>
           <td>19.0 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">+11.34%</td>
-          <td class="pos">+10.22%</td>
-          <td class="pos">+13.04%</td>
+          <td>16.9 B $</td>
+          <td>13.0 B $</td>
+          <td class="pos" style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">+11.34%</td>
           <td class="pos">+10.28%</td>
+          <td class="pos">+13.04%</td>
+          <td class="pos">+10.22%</td>
         </tr>
         <tr>
           <td>Free Cash Flow</td>
           <td class="hi">21.6 B $</td>
-          <td>14.0 B $</td>
-          <td>18.5 B $</td>
           <td>20.0 B $</td>
-          <td class="pos" style="border-left:1px solid rgba(0,0,0,.05);padding-left:16px">+15.43%</td>
-          <td class="pos">+13.34%</td>
-          <td class="pos">+17.33%</td>
+          <td>18.5 B $</td>
+          <td>14.0 B $</td>
+          <td class="pos" style="border-left:1px solid rgba(0,0,0,.07);padding-left:16px">+15.43%</td>
           <td class="pos">+6.47%</td>
+          <td class="pos">+17.33%</td>
+          <td class="pos">+13.34%</td>
         </tr>
       </tbody>
     </table>
   </div>
 
+  <div id="racios"></div>
   <!-- RATIOS (averages) -->
   <div class="card">
     <div class="card-hdr">
@@ -590,6 +610,7 @@
     </table>
   </div>
 
+  <div id="charts-rev"></div>
   <!-- CHARTS ROW 1: Revenue + EPS -->
   <div class="charts-2">
     <div class="card" style="margin-bottom:0">
@@ -604,7 +625,8 @@
     </div>
   </div>
 
-  <!-- CHARTS ROW 2: Margins + ROIC -->
+  <div id="charts-margins"></div>
+  <!-- CHARTS ROW 2 -->
   <div class="charts-2">
     <div class="card" style="margin-bottom:0">
       <div class="ch-title">Margens ao Longo dos Anos</div>
@@ -622,6 +644,7 @@
     </div>
   </div>
 
+  <div id="dividends"></div>
   <!-- DIVIDENDS -->
   <div class="card">
     <div class="card-hdr">
@@ -633,6 +656,7 @@
     <div class="ch-wrap" style="height:180px"><canvas id="div-chart"></canvas></div>
   </div>
 
+  <div id="fcf"></div>
   <!-- FCF -->
   <div class="card">
     <div class="card-hdr">
@@ -644,6 +668,7 @@
     <div class="ch-wrap" style="height:180px"><canvas id="fcf-chart"></canvas></div>
   </div>
 
+  <div id="annual"></div>
   <!-- ANNUAL DETAIL TABLE -->
   <div class="card">
     <div class="card-hdr">
@@ -655,6 +680,7 @@
     <div class="annual-wrap" id="annual-table-wrap"></div>
   </div>
 
+  <div id="segments"></div>
   <!-- SEGMENT REVENUE -->
   <div class="card">
     <div class="card-hdr">
@@ -675,6 +701,7 @@
     </table>
   </div>
 
+  <div id="ratios-annual"></div>
   <!-- ANNUAL RATIOS TABLE -->
   <div class="card">
     <div class="card-hdr">
@@ -685,6 +712,9 @@
     </div>
     <div class="annual-wrap" id="ratios-table-wrap"></div>
   </div>
+
+  </div>
+  </div><!-- /.page-layout -->
 
 </main>
 
@@ -1027,6 +1057,21 @@ buildCharts();
 buildAnnualTable();
 buildRatiosTable();
 buildSegTable();
+
+// Sidebar active highlight on scroll
+const navLinks = document.querySelectorAll('.side-nav a');
+const sections = ['intrinsic','metrics','dados-gerais','racios','charts-rev','charts-margins','dividends','fcf','annual','segments','ratios-annual'];
+
+window.addEventListener('scroll', () => {
+  let current = sections[0];
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.getBoundingClientRect().top < 100) current = id;
+  });
+  navLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+}, { passive: true });
 </script>
 </body>
 </html>
