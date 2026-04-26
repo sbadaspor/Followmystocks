@@ -1085,26 +1085,31 @@ function buildSummaryTableStatic(keys, wrapperId) {
 }
 
 function toggleHistoryStatic(key, label, invert, wrapperId) {
-  const row   = document.querySelector(`#${wrapperId} [onclick*="'${key}'"]`);
   const hrow  = document.getElementById('hist-' + key);
   const inner = document.getElementById('hinner-' + key);
-  const isOpen = hrow.classList.contains('open');
+  const isOpen = hrow.classList.contains('open'); // capture BEFORE closing others
 
+  // Close all in this wrapper
   document.getElementById(wrapperId).querySelectorAll('.metric-row').forEach(r => r.classList.remove('expanded'));
   document.getElementById(wrapperId).querySelectorAll('.history-row').forEach(r => r.classList.remove('open'));
 
+  // If it was already open — just close, done
   if (isOpen) return;
 
-  // Find the field data
+  // Open this one
+  const row = document.querySelector('#' + wrapperId + ' [onclick*="\'' + key + '\'"]');
+  row?.classList.add('expanded');
+  hrow.classList.add('open');
+
   const allKeys = [...INCOME_KEYS_STATIC, ...RATIO_KEYS_STATIC];
   const f = allKeys.find(k => k.key === key);
   if (!f) return;
 
-  row?.classList.add('expanded');
-  hrow.classList.add('open');
-
   const fmt = f.fmt || (v => v != null ? (f.isPct ? (v*100).toFixed(2)+'%' : v.toFixed(2)) : '—');
-  let h = '<table><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
+
+  // Table
+  let h = '<div style="display:grid;grid-template-columns:220px 1fr;gap:0">';
+  h += '<div><table style="width:100%"><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
   f.data.forEach((v, i) => {
     const prev = f.data[i+1];
     let yoy = '—';
@@ -1113,10 +1118,71 @@ function toggleHistoryStatic(key, label, invert, wrapperId) {
       const good = f.invert ? g<=0 : g>=0;
       yoy = '<span style="color:' + (good?'var(--green)':'var(--red)') + ';font-weight:600">' + (g>=0?'+':'') + (g*100).toFixed(2) + '%</span>';
     }
-    const bg = i%2===0?'#fff':'rgba(83,68,232,.02)';
-    h += `<tr style="background:${bg}"><td>${YEARS[i]}</td><td>${fmt(v)}</td><td>${yoy}</td></tr>`;
+    const bg = i%2===0?'var(--card)':'rgba(83,68,232,.02)';
+    h += '<tr style="background:' + bg + '"><td>' + YEARS[i] + '</td><td>' + fmt(v) + '</td><td>' + yoy + '</td></tr>';
   });
-  h += '</tbody></table>';
+  h += '</tbody></table></div>';
+
+  // SVG Bar/Line chart
+  const vals    = f.data.slice().reverse(); // oldest first
+  const yrs     = YEARS.slice().reverse();
+  const numVals = vals.filter(v => v != null);
+  if (numVals.length >= 2) {
+    const isPct   = f.isPct;
+    const rawVals = vals.map(v => v != null ? (isPct ? v*100 : v) : null);
+    const validV  = rawVals.filter(v => v != null);
+    const minV    = Math.min(...validV), maxV = Math.max(...validV);
+    const range   = maxV - minV || 0.001;
+    const W=380, H=200, PL=44, PR=10, PT=16, PB=28;
+    const plotW=W-PL-PR, plotH=H-PT-PB;
+    const px = i => PL + i/(vals.length-1||1)*plotW;
+    const py = v => PT + plotH - (v-minV)/range*plotH;
+
+    // Grid + ticks
+    let grid='', xLbls='';
+    [0,0.25,0.5,0.75,1].forEach(t => {
+      const v = minV + range*t, y = py(v);
+      grid += '<line x1="' + PL + '" y1="' + y.toFixed(1) + '" x2="' + (W-PR) + '" y2="' + y.toFixed(1) + '" stroke="rgba(0,0,0,.07)" stroke-width="0.8"/>';
+      const lbl = isPct ? v.toFixed(1)+'%' : Math.abs(v)>=1000?(v/1000).toFixed(1)+'B':v.toFixed(1);
+      grid += '<text x="' + (PL-4) + '" y="' + (y+3).toFixed(1) + '" text-anchor="end" font-size="8" fill="#9ca3af">' + lbl + '</text>';
+    });
+    vals.forEach((v,i) => {
+      if (i%3===0 || vals.length<=8)
+        xLbls += '<text x="' + px(i).toFixed(1) + '" y="' + (H-5) + '" text-anchor="middle" font-size="8" fill="#9ca3af">' + yrs[i] + '</text>';
+    });
+
+    // Line path + area fill
+    let pathD='', fillD='';
+    let firstX=null, lastX=null, lastY=null;
+    rawVals.forEach((v,i) => {
+      if (v != null) {
+        const x=px(i).toFixed(1), y=py(v).toFixed(1);
+        pathD += (pathD?'L':'M')+x+','+y;
+        if (firstX===null) firstX=x;
+        lastX=x; lastY=y;
+      }
+    });
+    if (firstX!==null) fillD = pathD+' L'+lastX+','+(H-PB)+' L'+firstX+','+(H-PB)+' Z';
+    const col = f.invert ? '#ef4444' : '#6366f1';
+    const gid = 'g_'+key;
+
+    const svg = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" style="max-width:100%">'
+      + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
+      + '<stop offset="0%" stop-color="' + col + '" stop-opacity="0.18"/>'
+      + '<stop offset="100%" stop-color="' + col + '" stop-opacity="0.01"/>'
+      + '</linearGradient></defs>'
+      + grid
+      + (fillD ? '<path d="' + fillD + '" fill="url(#' + gid + ')"/>' : '')
+      + (pathD ? '<path d="' + pathD + '" stroke="' + col + '" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>' : '')
+      + xLbls
+      + '</svg>';
+
+    h += '<div style="padding:16px 12px 8px;border-left:1px solid var(--border)">'
+      + '<div style="font-size:10px;font-weight:600;color:var(--dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em">' + label + '</div>'
+      + svg
+      + '</div>';
+  }
+  h += '</div>';
   inner.innerHTML = h;
 }
 let sbAnnual   = [];  // rows from asset_annual_data
@@ -1262,38 +1328,65 @@ function buildSummaryTable(keys, wrapperId, title, sub) {
 
 // ── Toggle history row ─────────────────────────────────────
 function toggleHistory(key, label, invert, wrapperId) {
-  const row    = document.getElementById('mr-' + key);
-  const hrow   = document.getElementById('hist-' + key);
-  const inner  = document.getElementById('hinner-' + key);
-  const isOpen = hrow.classList.contains('open');
+  const hrow  = document.getElementById('hist-' + key);
+  const inner = document.getElementById('hinner-' + key);
+  const isOpen = hrow.classList.contains('open'); // capture BEFORE closing
 
-  // Close all in this table
   document.getElementById(wrapperId).querySelectorAll('.metric-row').forEach(r => r.classList.remove('expanded'));
   document.getElementById(wrapperId).querySelectorAll('.history-row').forEach(r => r.classList.remove('open'));
 
-  // If already open, just close (toggle off)
   if (isOpen) return;
 
-  row.classList.add('expanded');
+  document.getElementById('mr-' + key)?.classList.add('expanded');
   hrow.classList.add('open');
 
-  let h = '<table><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
+  const pctKeys = ['gross_margin','op_margin','net_margin','roic'];
+  const isPct   = pctKeys.includes(key);
+
+  let h = '<div style="display:grid;grid-template-columns:220px 1fr;gap:0">';
+  h += '<div><table style="width:100%"><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
   sbYears.forEach((year, i) => {
     const v    = getVal(key, year);
     const prev = i < sbYears.length-1 ? getVal(key, sbYears[i+1]) : null;
-    let yoy = '—';
+    let yoy = '\u2014';
     if (v != null && prev != null && prev !== 0) {
-      const g    = (v - prev) / Math.abs(prev);
-      const good = invert ? g <= 0 : g >= 0;
-      yoy = '<span style="color:' + (good?'var(--green)':'var(--red)') + ';font-weight:600">'
-          + (g>=0?'+':'') + (g*100).toFixed(2) + '%</span>';
+      const g = (v-prev)/Math.abs(prev), good = invert?g<=0:g>=0;
+      yoy = '<span style="color:'+(good?'var(--green)':'var(--red)')+';font-weight:600">'+(g>=0?'+':'')+(g*100).toFixed(2)+'%</span>';
     }
-    const bg = i % 2 === 0 ? '#fff' : 'rgba(83,68,232,.02)';
-    h += '<tr style="background:'+bg+'"><td>'+year+'</td><td>'+fmtVal(key, v)+'</td><td>'+yoy+'</td></tr>';
+    const bg = i%2===0?'var(--card)':'rgba(83,68,232,.02)';
+    h += '<tr style="background:'+bg+'"><td>'+year+'</td><td>'+fmtVal(key,v)+'</td><td>'+yoy+'</td></tr>';
   });
-  h += '</tbody></table>';
+  h += '</tbody></table></div>';
+
+  const cols = sbYears.slice().reverse();
+  const rawVals = cols.map(y=>{const v=getVal(key,y);return v!=null?(isPct?v*100:v):null;});
+  const validV  = rawVals.filter(v=>v!=null);
+  if (validV.length >= 2) {
+    const minV=Math.min(...validV),maxV=Math.max(...validV),range=maxV-minV||0.001;
+    const W=380,H=200,PL=44,PR=10,PT=16,PB=28,plotW=W-PL-PR,plotH=H-PT-PB;
+    const px=i=>PL+i/(cols.length-1||1)*plotW;
+    const py=v=>PT+plotH-(v-minV)/range*plotH;
+    let grid='',xLbls='';
+    [0,0.25,0.5,0.75,1].forEach(t=>{
+      const v=minV+range*t,y=py(v);
+      grid+='<line x1="'+PL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(0,0,0,.07)" stroke-width="0.8"/>';
+      const lbl=isPct?v.toFixed(1)+'%':Math.abs(v)>=1000?(v/1000).toFixed(1)+'B':v.toFixed(1);
+      grid+='<text x="'+(PL-4)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" font-size="8" fill="#9ca3af">'+lbl+'</text>';
+    });
+    cols.forEach((yr,i)=>{if(i%3===0||cols.length<=8)xLbls+='<text x="'+px(i).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle" font-size="8" fill="#9ca3af">'+yr+'</text>';});
+    let pathD='',fillD='',firstX=null,lastX=null;
+    rawVals.forEach((v,i)=>{if(v!=null){const x=px(i).toFixed(1),y=py(v).toFixed(1);pathD+=(pathD?'L':'M')+x+','+y;if(!firstX)firstX=x;lastX=x;}});
+    if(firstX)fillD=pathD+' L'+lastX+','+(H-PB)+' L'+firstX+','+(H-PB)+' Z';
+    const col=invert?'#ef4444':'#6366f1',gid='gsb_'+key;
+    const svg='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="max-width:100%">'
+      +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+col+'" stop-opacity="0.18"/><stop offset="100%" stop-color="'+col+'" stop-opacity="0.01"/></linearGradient></defs>'
+      +grid+(fillD?'<path d="'+fillD+'" fill="url(#'+gid+')"/>':'')+(pathD?'<path d="'+pathD+'" stroke="'+col+'" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>':'')+xLbls+'</svg>';
+    h+='<div style="padding:16px 12px 8px;border-left:1px solid var(--border)"><div style="font-size:10px;font-weight:600;color:var(--dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em">'+label+'</div>'+svg+'</div>';
+  }
+  h += '</div>';
   inner.innerHTML = h;
 }
+
 
 // ── Dynamic segment table ──────────────────────────────────
 
