@@ -741,7 +741,7 @@ function renderHistorico() {
 
     ${histAssetId ? `
     <div class="hist-tabs">
-      <button class="hist-tab ${histView==='income'?'active':''}" onclick="setHistView('income')">Income Statement</button>
+      <button class="hist-tab ${histView==='income'?'active':''}" onclick="setHistView('income')">Dados Gerais</button>
       <button class="hist-tab ${histView==='ratios'?'active':''}" onclick="setHistView('ratios')">R\xe1cios</button>
       <button class="hist-tab ${histView==='segments'?'active':''}" onclick="setHistView('segments')">Segmentos</button>
     </div>` : ''}
@@ -832,13 +832,129 @@ function setHistView(view) {
 }
 
 function buildHistBody() {
-  if (histView === 'income')   return buildAnnualTable([...INCOME_FIELDS, ...customIncomeFields], 'income');
-  if (histView === 'ratios')   return buildAnnualTable([...RATIO_FIELDS,  ...customRatioFields],  'ratios');
+  if (histView === 'income') {
+    const fields = [...INCOME_FIELDS, ...customIncomeFields];
+    return buildAnnualTable(fields, 'income') + '<div id="summary-block">' + buildSummaryBlock(fields) + '</div>';
+  }
+  if (histView === 'ratios') {
+    const fields = [...RATIO_FIELDS, ...customRatioFields];
+    return buildAnnualTable(fields, 'ratios') + '<div id="summary-block">' + buildSummaryBlock(fields) + '</div>';
+  }
   if (histView === 'segments') return buildSegmentEditor();
   return '';
 }
 
-// ── Annual table with sliding window + YoY growth ────────
+// ── Summary block: Last Year / Avgs / CAGRs ─────────────
+function buildSummaryBlock(fields) {
+  // Collect all years with any data, sorted desc
+  const allYears = YEARS_LIST.filter(y => {
+    const d = histData[y];
+    return d && Object.values(d).some(v => v != null && typeof v === 'number');
+  }).sort((a,b) => b-a);
+
+  if (allYears.length < 2) return ''; // need at least 2 years
+
+  const newestYear = allYears[0];
+
+  // Helper: get raw value for a field in a given year
+  function getVal(field, year) {
+    const d = histData[year];
+    if (!d) return null;
+    return d[field.key] != null ? parseFloat(d[field.key]) : null;
+  }
+
+  // Average of last N years
+  function avg(field, n) {
+    const years = allYears.slice(0, n);
+    const vals  = years.map(y => getVal(field, y)).filter(v => v != null);
+    if (!vals.length) return null;
+    return vals.reduce((s,v) => s+v, 0) / vals.length;
+  }
+
+  // CAGR over N years: (end/start)^(1/N) - 1
+  function cagr(field, n) {
+    if (allYears.length < n+1) return null;
+    const endVal   = getVal(field, allYears[0]);
+    const startVal = getVal(field, allYears[n]);
+    if (endVal == null || startVal == null || startVal === 0) return null;
+    if (endVal < 0 || startVal < 0) return null; // CAGR not meaningful for negatives
+    return Math.pow(endVal / startVal, 1/n) - 1;
+  }
+
+  // YoY
+  function yoy(field) {
+    if (allYears.length < 2) return null;
+    const curr = getVal(field, allYears[0]);
+    const prev = getVal(field, allYears[1]);
+    if (curr == null || prev == null || prev === 0) return null;
+    return (curr - prev) / Math.abs(prev);
+  }
+
+  // Format helpers
+  const fmtVal = (field, v) => {
+    if (v == null || isNaN(v)) return '<span style="color:var(--muted)">—</span>';
+    if (field.isPct) return (v*100).toFixed(2)+'%';
+    return v.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2});
+  };
+
+  const fmtPct = (v) => {
+    if (v == null || isNaN(v)) return '<span style="color:var(--muted)">—</span>';
+    const pos = v >= 0;
+    const col = pos ? 'var(--green)' : 'var(--red)';
+    return `<span style="color:${col};font-weight:600">${pos?'+':''}${(v*100).toFixed(2)}%</span>`;
+  };
+
+  // Shares outstanding: invert the color logic (lower = good = buybacks)
+  const fmtCagr = (field, v) => {
+    if (v == null || isNaN(v)) return '<span style="color:var(--muted)">—</span>';
+    const pos = v >= 0;
+    const invertGood = field.key === 'shares_outstanding';
+    const isGood = invertGood ? !pos : pos;
+    const col = isGood ? 'var(--green)' : 'var(--red)';
+    return `<span style="color:${col};font-weight:600">${pos?'+':''}${(v*100).toFixed(2)}%</span>`;
+  };
+
+  const cols = [
+    { label:'Último Ano',  getValue: f => fmtVal(f, getVal(f, newestYear)) },
+    { label:'Méd. 10A',   getValue: f => fmtVal(f, avg(f,10)) },
+    { label:'Méd. 5A',    getValue: f => fmtVal(f, avg(f,5))  },
+    { label:'Méd. 3A',    getValue: f => fmtVal(f, avg(f,3))  },
+    { label:'YoY',         getValue: f => fmtPct(yoy(f))      },
+    { label:'CAGR 10A',   getValue: f => fmtCagr(f, cagr(f,10)) },
+    { label:'CAGR 5A',    getValue: f => fmtCagr(f, cagr(f,5))  },
+    { label:'CAGR 3A',    getValue: f => fmtCagr(f, cagr(f,3))  },
+  ];
+
+  let html = `
+  <div style="margin-top:16px;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:14px;font-weight:600">Análise Comparativa</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Calculado automaticamente a partir dos dados inseridos · ${newestYear}</div>
+      </div>
+      <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--card2);border:1px solid var(--border);padding:3px 9px;border-radius:99px">${allYears.length} anos de dados</span>
+    </div>
+    <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;min-width:700px;">
+      <thead>
+        <tr>
+          <th style="padding:10px 14px;text-align:left;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--card2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);position:sticky;left:0;min-width:200px">Métrica</th>
+          ${cols.map((c,i) => `<th style="padding:10px 12px;text-align:right;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:${i>=4?'var(--accent)':'var(--muted)'};background:var(--card2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);white-space:nowrap${i===4?';border-left:2px solid var(--border)':''}">${c.label}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>`;
+
+  fields.forEach((f, fi) => {
+    const bg = fi%2===0 ? 'var(--card)' : 'rgba(0,0,0,.02)';
+    html += `<tr>
+      <td style="padding:10px 14px;font-size:12px;color:var(--dim);font-weight:500;background:var(--card2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);position:sticky;left:0">${f.label}</td>
+      ${cols.map((c,i) => `<td style="padding:10px 12px;font-size:12.5px;text-align:right;font-family:'JetBrains Mono',monospace;background:${bg};border-bottom:1px solid var(--border);border-right:1px solid var(--border)${i===4?';border-left:2px solid var(--border)':''}">${c.getValue(f)}</td>`).join('')}
+    </tr>`;
+  });
+
+  html += `</tbody></table></div></div>`;
+  return html;
+}
 function buildAnnualTable(fields, section) {
   const cols  = getVisibleYears(); // e.g. [2025,2024,2023,2022,2021,2020,2019]
   const colW  = 118;
@@ -917,7 +1033,6 @@ function buildAnnualTable(fields, section) {
 // ── Handle input + live YoY update ──────────────────────
 function handleHistInput(year, field, rawVal, isPct, inputEl) {
   setHistVal(year, field, rawVal, isPct);
-  // Recalculate YoY for this field across visible years
   setTimeout(() => {
     const cols = getVisibleYears();
     cols.forEach((y, ci) => {
@@ -941,7 +1056,13 @@ function handleHistInput(year, field, rawVal, isPct, inputEl) {
         td.appendChild(div);
       }
     });
-  }, 50);
+    // Refresh summary block
+    const fields = histView === 'income'
+      ? [...INCOME_FIELDS, ...customIncomeFields]
+      : [...RATIO_FIELDS,  ...customRatioFields];
+    const summaryEl = document.getElementById('summary-block');
+    if (summaryEl) summaryEl.outerHTML = '<div id="summary-block">' + buildSummaryBlock(fields).slice(buildSummaryBlock(fields).indexOf('<div style="margin-top')) + '</div>';
+  }, 80);
 }
 
 // ── Custom fields ────────────────────────────────────────
