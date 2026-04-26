@@ -1144,11 +1144,12 @@ function toggleHistory(key, label, invert, wrapperId) {
   const inner  = document.getElementById('hinner-' + key);
   const isOpen = hrow.classList.contains('open');
 
-  // Close all others in this table
+  // Close all in this table
   document.getElementById(wrapperId).querySelectorAll('.metric-row').forEach(r => r.classList.remove('expanded'));
   document.getElementById(wrapperId).querySelectorAll('.history-row').forEach(r => r.classList.remove('open'));
 
-  if (!isOpen) {
+  // If already open, just close (toggle off)
+  if (isOpen) return;
     row.classList.add('expanded');
     hrow.classList.add('open');
 
@@ -1179,9 +1180,12 @@ function toggleHistory(key, label, invert, wrapperId) {
 const SEG_TOOLTIPS = {
   'Service Revenue':           'São taxas cobradas aos bancos e instituições financeiras pelo uso da marca Visa e pelo volume de pagamentos gerado. Quanto mais as pessoas usam os cartões Visa de um banco, mais a Visa ganha aqui.',
   'Data Processing Revenue':   'É o "coração tecnológico". Foca-se na autorização, compensação e liquidação de cada transação. Quando passas o cartão no terminal, a Visa cobra uma pequena taxa fixa por processar essa informação e garantir que o dinheiro vai do ponto A para o ponto B com segurança.',
-  'International Transaction': 'Esta parte foca-se em pagamentos feitos fora do país de origem do cartão ou que envolvam conversão de moeda. É uma das áreas mais rentáveis, pois as taxas de câmbio e processamento transfronteiriço são mais elevadas.',
-  'Other':                     'Inclui serviços de consultoria, licenças de utilização, segurança contra fraudes e análise de dados para parceiros.',
-  'Client Incentives':         'Tal como a UnitedHealth tem as "eliminations" para não contar dinheiro duas vezes, a Visa subtrai estes incentivos da sua receita bruta. São pagamentos ou descontos que a Visa dá aos bancos e parceiros para que eles continuem a emitir cartões Visa em vez de mudarem para a Mastercard. É o "custo" para manter a rede dominante e em crescimento.',
+  'Data Processing':           'É o "coração tecnológico". Foca-se na autorização, compensação e liquidação de cada transação. Quando passas o cartão no terminal, a Visa cobra uma pequena taxa fixa por processar essa informação e garantir que o dinheiro vai do ponto A para o ponto B com segurança.',
+  'International Transaction':  'Esta parte foca-se em pagamentos feitos fora do país de origem do cartão ou que envolvam conversão de moeda. É uma das áreas mais rentáveis, pois as taxas de câmbio e processamento transfronteiriço são mais elevadas.',
+  'International Transation':   'Esta parte foca-se em pagamentos feitos fora do país de origem do cartão ou que envolvam conversão de moeda. É uma das áreas mais rentáveis, pois as taxas de câmbio e processamento transfronteiriço são mais elevadas.',
+  'Other':                      'Inclui serviços de consultoria, licenças de utilização, segurança contra fraudes e análise de dados para parceiros.',
+  'Cliente Incentives':         'Tal como a UnitedHealth tem as "eliminations" para não contar dinheiro duas vezes, a Visa subtrai estes incentivos da sua receita bruta. São pagamentos ou descontos que a Visa dá aos bancos e parceiros para que eles continuem a emitir cartões Visa em vez de mudarem para a Mastercard. É o "custo" para manter a rede dominante e em crescimento.',
+  'Client Incentives':          'Tal como a UnitedHealth tem as "eliminations" para não contar dinheiro duas vezes, a Visa subtrai estes incentivos da sua receita bruta. São pagamentos ou descontos que a Visa dá aos bancos e parceiros para que eles continuem a emitir cartões Visa em vez de mudarem para a Mastercard. É o "custo" para manter a rede dominante e em crescimento.',
 };
 
 function buildDynamicSegTable() {
@@ -1246,10 +1250,12 @@ function toggleSegHistory(name, idx) {
   const inner = document.getElementById('seghinner-' + idx);
   const isOpen = hrow.classList.contains('open');
 
+  // Close all
   document.querySelectorAll('#seg-tbody .metric-row').forEach(r => r.classList.remove('expanded'));
   document.querySelectorAll('#seg-tbody .history-row').forEach(r => r.classList.remove('open'));
 
-  if (!isOpen) {
+  // If it was already open, just close (toggle off)
+  if (isOpen) return;
     row.classList.add('expanded');
     hrow.classList.add('open');
 
