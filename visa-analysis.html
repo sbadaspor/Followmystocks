@@ -841,6 +841,18 @@ function buildRatiosTable() {
 }
 
 // ── Segment table ─────────────────────────────────────────
+
+const SEG_TOOLTIPS = {
+  'Service Revenue':           'São taxas cobradas aos bancos e instituições financeiras pelo uso da marca Visa e pelo volume de pagamentos gerado. Quanto mais as pessoas usam os cartões Visa de um banco, mais a Visa ganha aqui.',
+  'Data Processing Revenue':   'É o "coração tecnológico". Foca-se na autorização, compensação e liquidação de cada transação. Quando passas o cartão no terminal, a Visa cobra uma pequena taxa fixa por processar essa informação e garantir que o dinheiro vai do ponto A para o ponto B com segurança.',
+  'Data Processing':           'É o "coração tecnológico". Foca-se na autorização, compensação e liquidação de cada transação. Quando passas o cartão no terminal, a Visa cobra uma pequena taxa fixa por processar essa informação e garantir que o dinheiro vai do ponto A para o ponto B com segurança.',
+  'International Transaction':  'Esta parte foca-se em pagamentos feitos fora do país de origem do cartão ou que envolvam conversão de moeda. É uma das áreas mais rentáveis, pois as taxas de câmbio e processamento transfronteiriço são mais elevadas.',
+  'International Transation':   'Esta parte foca-se em pagamentos feitos fora do país de origem do cartão ou que envolvam conversão de moeda. É uma das áreas mais rentáveis, pois as taxas de câmbio e processamento transfronteiriço são mais elevadas.',
+  'Other':                      'Inclui serviços de consultoria, licenças de utilização, segurança contra fraudes e análise de dados para parceiros.',
+  'Cliente Incentives':         'Tal como a UnitedHealth tem as "eliminations" para não contar dinheiro duas vezes, a Visa subtrai estes incentivos da sua receita bruta. São pagamentos ou descontos que a Visa dá aos bancos e parceiros para que eles continuem a emitir cartões Visa em vez de mudarem para a Mastercard. É o "custo" para manter a rede dominante e em crescimento.',
+  'Client Incentives':          'Tal como a UnitedHealth tem as "eliminations" para não contar dinheiro duas vezes, a Visa subtrai estes incentivos da sua receita bruta. São pagamentos ou descontos que a Visa dá aos bancos e parceiros para que eles continuem a emitir cartões Visa em vez de mudarem para a Mastercard. É o "custo" para manter a rede dominante e em crescimento.',
+};
+
 function buildSegTable() {
   const total = 40.0;
   const tbody = document.getElementById('seg-tbody');
@@ -852,9 +864,13 @@ function buildSegTable() {
     const yoy = seg.yoy;
     const barW = pct ? Math.round(pct * 100) : 0;
     const isNeg = name === 'Client Incentives';
+    const tooltip = typeof SEG_TOOLTIPS !== 'undefined' ? (SEG_TOOLTIPS[name] || '') : '';
+    const nameCell = tooltip
+      ? '<div class="seg-tooltip-wrap">'+name+'<button class="seg-info-btn">★</button><div class="seg-tooltip">'+tooltip+'</div></div>'
+      : name;
 
     html += '<tr>';
-    html += '<td>' + name + '</td>';
+    html += '<td>' + nameCell + '</td>';
     html += '<td class="' + (isNeg?'neg':'') + '">' + (val>=0?'':'-') + Math.abs(val).toFixed(2) + ' B $</td>';
     html += '<td>' + (pct ? (pct*100).toFixed(1)+'%' : '—') + '</td>';
     html += '<td class="bar-cell">';
@@ -1280,16 +1296,6 @@ function toggleHistory(key, label, invert, wrapperId) {
 }
 
 // ── Dynamic segment table ──────────────────────────────────
-const SEG_TOOLTIPS = {
-  'Service Revenue':           'São taxas cobradas aos bancos e instituições financeiras pelo uso da marca Visa e pelo volume de pagamentos gerado. Quanto mais as pessoas usam os cartões Visa de um banco, mais a Visa ganha aqui.',
-  'Data Processing Revenue':   'É o "coração tecnológico". Foca-se na autorização, compensação e liquidação de cada transação. Quando passas o cartão no terminal, a Visa cobra uma pequena taxa fixa por processar essa informação e garantir que o dinheiro vai do ponto A para o ponto B com segurança.',
-  'Data Processing':           'É o "coração tecnológico". Foca-se na autorização, compensação e liquidação de cada transação. Quando passas o cartão no terminal, a Visa cobra uma pequena taxa fixa por processar essa informação e garantir que o dinheiro vai do ponto A para o ponto B com segurança.',
-  'International Transaction':  'Esta parte foca-se em pagamentos feitos fora do país de origem do cartão ou que envolvam conversão de moeda. É uma das áreas mais rentáveis, pois as taxas de câmbio e processamento transfronteiriço são mais elevadas.',
-  'International Transation':   'Esta parte foca-se em pagamentos feitos fora do país de origem do cartão ou que envolvam conversão de moeda. É uma das áreas mais rentáveis, pois as taxas de câmbio e processamento transfronteiriço são mais elevadas.',
-  'Other':                      'Inclui serviços de consultoria, licenças de utilização, segurança contra fraudes e análise de dados para parceiros.',
-  'Cliente Incentives':         'Tal como a UnitedHealth tem as "eliminations" para não contar dinheiro duas vezes, a Visa subtrai estes incentivos da sua receita bruta. São pagamentos ou descontos que a Visa dá aos bancos e parceiros para que eles continuem a emitir cartões Visa em vez de mudarem para a Mastercard. É o "custo" para manter a rede dominante e em crescimento.',
-  'Client Incentives':          'Tal como a UnitedHealth tem as "eliminations" para não contar dinheiro duas vezes, a Visa subtrai estes incentivos da sua receita bruta. São pagamentos ou descontos que a Visa dá aos bancos e parceiros para que eles continuem a emitir cartões Visa em vez de mudarem para a Mastercard. É o "custo" para manter a rede dominante e em crescimento.',
-};
 
 function buildDynamicSegTable() {
   if (!sbSegments.length) {
@@ -1348,38 +1354,39 @@ function buildDynamicSegTable() {
 }
 
 function toggleSegHistory(name, idx) {
-  const row   = document.getElementById('seg-mr-' + idx);
   const hrow  = document.getElementById('seghist-' + idx);
-  const inner = document.getElementById('seghinner-' + idx);
   const isOpen = hrow.classList.contains('open');
 
-  // Close all
+  // Close all first
   document.querySelectorAll('#seg-tbody .metric-row').forEach(r => r.classList.remove('expanded'));
   document.querySelectorAll('#seg-tbody .history-row').forEach(r => r.classList.remove('open'));
 
-  // If it was already open, just close (toggle off)
+  // If already open → just close
   if (isOpen) return;
-    row.classList.add('expanded');
-    hrow.classList.add('open');
 
-    const segYears = [...new Set(sbSegments.map(s => s.fiscal_year))].sort((a,b) => b-a);
+  // Open this one
+  document.getElementById('seg-mr-' + idx).classList.add('expanded');
+  hrow.classList.add('open');
 
-    let h = '<table><thead><tr><th>Ano</th><th>Receita (B $)</th><th>YoY</th></tr></thead><tbody>';
-    segYears.forEach((year, i) => {
-      const cur  = sbSegments.find(s => s.fiscal_year === year && s.segment_name === name);
-      const prev = i < segYears.length-1 ? sbSegments.find(s => s.fiscal_year === segYears[i+1] && s.segment_name === name) : null;
-      const v    = cur  ? parseFloat(cur.revenue||0)  : null;
-      const p    = prev ? parseFloat(prev.revenue||0) : null;
-      let yoy = '—';
-      if (v != null && p != null && p !== 0) {
-        const g = (v-p)/Math.abs(p);
-        yoy = '<span style="color:' + (g>=0?'var(--green)':'var(--red)') + ';font-weight:600">' + (g>=0?'+':'') + (g*100).toFixed(1) + '%</span>';
-      }
-      const bg = i%2===0?'#fff':'rgba(83,68,232,.02)';
-      h += `<tr style="background:${bg}"><td>${year}</td><td>${v!=null?Math.abs(v/1000).toFixed(3)+' B $':'—'}</td><td>${yoy}</td></tr>`;
-    });
-    h += '</tbody></table>';
-    inner.innerHTML = h;
+  const inner = document.getElementById('seghinner-' + idx);
+  const segYrs = [...new Set(sbSegments.map(s => s.fiscal_year))].sort((a,b) => b-a);
+
+  let h = '<table><thead><tr><th>Ano</th><th>Receita (B $)</th><th>YoY</th></tr></thead><tbody>';
+  segYrs.forEach((year, i) => {
+    const cur  = sbSegments.find(s => s.fiscal_year === year && s.segment_name === name);
+    const prev = i < segYrs.length-1 ? sbSegments.find(s => s.fiscal_year === segYrs[i+1] && s.segment_name === name) : null;
+    const v    = cur  ? parseFloat(cur.revenue||0)  : null;
+    const p    = prev ? parseFloat(prev.revenue||0) : null;
+    let yoy = '—';
+    if (v != null && p != null && p !== 0) {
+      const g = (v-p)/Math.abs(p);
+      yoy = '<span style="color:'+(g>=0?'var(--green)':'var(--red)')+';font-weight:600">'+(g>=0?'+':'')+(g*100).toFixed(1)+'%</span>';
+    }
+    const bg = i%2===0?'#fff':'rgba(83,68,232,.02)';
+    h += '<tr style="background:'+bg+'"><td>'+year+'</td><td>'+(v!=null?Math.abs(v/1000).toFixed(3)+' B $':'—')+'</td><td>'+yoy+'</td></tr>';
+  });
+  h += '</tbody></table>';
+  inner.innerHTML = h;
 }
 
 // ── Init ──────────────────────────────────────────────────
