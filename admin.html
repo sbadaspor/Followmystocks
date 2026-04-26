@@ -674,9 +674,9 @@ const INCOME_FIELDS = [
 ];
 
 const RATIO_FIELDS = [
-  { key:'gross_margin',   label:'Gross Margin / Margem Bruta',          unit:'%', decimals:4, isPct:true },
-  { key:'op_margin',      label:'Operation Margin / Margem Operacional', unit:'%', decimals:4, isPct:true },
-  { key:'net_margin',     label:'Net Profit Margin / Margem L\xedquida',unit:'%', decimals:4, isPct:true },
+  { key:'gross_margin',   label:'Gross Margin / Margem Bruta',          unit:'%', decimals:4, isPct:true, autoCalc: d => (d.revenue && d.gross_profit != null) ? d.gross_profit / d.revenue : null },
+  { key:'op_margin',      label:'Operation Margin / Margem Operacional', unit:'%', decimals:4, isPct:true, autoCalc: d => (d.revenue && d.op_income   != null) ? d.op_income   / d.revenue : null },
+  { key:'net_margin',     label:'Net Profit Margin / Margem L\xedquida',unit:'%', decimals:4, isPct:true, autoCalc: d => (d.revenue && d.net_income  != null) ? d.net_income  / d.revenue : null },
   { key:'roic',           label:'ROIC',                                  unit:'%', decimals:4, isPct:true },
   { key:'current_ratio',  label:'Current Ratio',                         unit:'',  decimals:4 },
   { key:'lt_debt_capital',label:'Long-term Debt / Capital',             unit:'',  decimals:4 },
@@ -982,35 +982,62 @@ function buildAnnualTable(fields, section) {
 
   fields.forEach((f, fi) => {
     const bg = fi % 2 === 0 ? 'var(--card)' : 'rgba(0,0,0,.02)';
+    const isAuto = !!f.autoCalc;
+
     html += `<tr>
-      <td style="padding:0 14px;font-size:12px;color:var(--dim);font-weight:500;background:var(--card2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);position:sticky;left:0;z-index:1;height:52px">${f.label}${f.custom?`<button onclick="removeCustomField('${section}','${f.key}')" style="margin-left:6px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px">&times;</button>`:''}</td>`;
+      <td style="padding:0 14px;font-size:12px;color:var(--dim);font-weight:500;background:var(--card2);border-bottom:1px solid var(--border);border-right:1px solid var(--border);position:sticky;left:0;z-index:1;height:52px">
+        ${f.label}
+        ${isAuto ? `<span style="margin-left:6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);background:rgba(83,68,232,.08);padding:1px 5px;border-radius:4px">AUTO</span>` : ''}
+        ${f.custom ? `<button onclick="removeCustomField('${section}','${f.key}')" style="margin-left:6px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px">&times;</button>` : ''}
+      </td>`;
 
     cols.forEach((year, ci) => {
-      const row      = histData[year] || {};
-      const rowPrev  = histData[cols[ci+1]] || {}; // one year older
-      let val = row[f.key] != null ? row[f.key] : '';
-      let dispVal = val !== '' ? (f.isPct ? (parseFloat(val)*100).toFixed(2) : String(val)) : '';
+      const row     = histData[year] || {};
+      const rowPrev = histData[cols[ci+1]] || {};
+
+      // Resolve value: auto-calculated or manually stored
+      let rawVal = row[f.key] != null ? row[f.key] : null;
+      if (isAuto) {
+        const calc = f.autoCalc(row);
+        if (calc != null) {
+          rawVal = calc;
+          // Also store back into histData so summary block can use it
+          if (!histData[year]) histData[year] = {};
+          histData[year][f.key] = calc;
+        }
+      }
+
+      const dispVal = rawVal != null ? (f.isPct ? (rawVal*100).toFixed(2) : String(rawVal)) : '';
 
       // YoY growth
       let growthHtml = '';
-      if (val !== '' && rowPrev[f.key] != null && rowPrev[f.key] !== 0) {
-        const prev = rowPrev[f.key];
-        const curr = parseFloat(val);
-        const gr   = (curr - prev) / Math.abs(prev) * 100;
-        const pos  = gr >= 0;
-        // For some metrics, negative is good (shares outstanding going down = buybacks)
+      const prevRaw = rowPrev[f.key] != null ? rowPrev[f.key] : (isAuto ? f.autoCalc(rowPrev) : null);
+      if (rawVal != null && prevRaw != null && prevRaw !== 0) {
+        const gr  = (rawVal - prevRaw) / Math.abs(prevRaw) * 100;
+        const pos = gr >= 0;
         const invertGood = f.key === 'shares_outstanding';
         const isGood = invertGood ? !pos : pos;
         growthHtml = `<div style="font-size:9.5px;font-weight:600;color:${isGood?'var(--green)':'var(--red)'};margin-top:1px;text-align:right">${pos?'+':''}${gr.toFixed(1)}%</div>`;
       }
 
-      html += `<td style="padding:4px 6px;background:${bg};border-bottom:1px solid var(--border);border-right:1px solid var(--border);vertical-align:middle">
-        <input class="ag-input" type="number" step="any"
-          data-year="${year}" data-field="${f.key}" data-pct="${f.isPct||false}"
-          value="${dispVal}" placeholder="—"
-          oninput="handleHistInput(${year},'${f.key}',this.value,${f.isPct||false},this)">
-        ${growthHtml}
-      </td>`;
+      if (isAuto) {
+        // Read-only calculated cell
+        html += `<td style="padding:6px 8px;background:${bg};border-bottom:1px solid var(--border);border-right:1px solid var(--border);vertical-align:middle;text-align:right">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${rawVal!=null?'var(--text)':'var(--muted)'};padding:2px 4px">
+            ${rawVal != null ? (f.isPct ? (rawVal*100).toFixed(2)+'%' : dispVal) : '—'}
+          </div>
+          ${growthHtml}
+        </td>`;
+      } else {
+        // Editable input cell
+        html += `<td style="padding:4px 6px;background:${bg};border-bottom:1px solid var(--border);border-right:1px solid var(--border);vertical-align:middle">
+          <input class="ag-input" type="number" step="any"
+            data-year="${year}" data-field="${f.key}" data-pct="${f.isPct||false}"
+            value="${dispVal}" placeholder="—"
+            oninput="handleHistInput(${year},'${f.key}',this.value,${f.isPct||false},this)">
+          ${growthHtml}
+        </td>`;
+      }
     });
     html += `</tr>`;
   });
@@ -1033,10 +1060,42 @@ function buildAnnualTable(fields, section) {
 // ── Handle input + live YoY update ──────────────────────
 function handleHistInput(year, field, rawVal, isPct, inputEl) {
   setHistVal(year, field, rawVal, isPct);
+  const autoTriggers = ['revenue','gross_profit','op_income','net_income'];
+  if (autoTriggers.includes(field)) {
+    setTimeout(() => { document.getElementById('hist-body').innerHTML = buildHistBody(); }, 80);
+    return;
+  }
   setTimeout(() => {
     const cols = getVisibleYears();
     cols.forEach((y, ci) => {
-      const inp = document.querySelector(`.ag-input[data-year="${y}"][data-field="${field}"]`);
+      const inp = document.querySelector('.ag-input[data-year="'+y+'"][data-field="'+field+'"]');
+      if (!inp) return;
+      const td = inp.parentElement;
+      const og = td.querySelector('div');
+      const row = histData[y] || {};
+      const rp  = histData[cols[ci+1]] || {};
+      const v = row[field], p = rp[field];
+      if (og) og.remove();
+      if (v != null && p != null && p !== 0) {
+        const gr = (v-p)/Math.abs(p)*100;
+        const pos = gr >= 0;
+        const ig = field==='shares_outstanding' ? !pos : pos;
+        const d = document.createElement('div');
+        d.style.cssText = 'font-size:9.5px;font-weight:600;color:'+(ig?'var(--green)':'var(--red)')+';margin-top:1px;text-align:right';
+        d.textContent = (pos?'+':'')+gr.toFixed(1)+'%';
+        td.appendChild(d);
+      }
+    });
+    const flds = histView==='income' ? [...INCOME_FIELDS,...customIncomeFields] : [...RATIO_FIELDS,...customRatioFields];
+    const se = document.getElementById('summary-block');
+    if (se) se.innerHTML = buildSummaryBlock(flds);
+  }, 80);
+}
+
+  setTimeout(() => {
+    const cols = getVisibleYears();
+    cols.forEach((y, ci) => {
+      const inp = document.querySelector('.ag-input[data-year="'+y+'"][data-field="'+field+'"]');
       if (!inp) return;
       const td = inp.parentElement;
       const oldGrowth = td.querySelector('div');
@@ -1051,7 +1110,7 @@ function handleHistInput(year, field, rawVal, isPct, inputEl) {
         const invertGood = field === 'shares_outstanding';
         const isGood = invertGood ? !pos : pos;
         const div = document.createElement('div');
-        div.style.cssText = `font-size:9.5px;font-weight:600;color:${isGood?'var(--green)':'var(--red)'};margin-top:1px;text-align:right`;
+        div.style.cssText = 'font-size:9.5px;font-weight:600;color:'+(isGood?'var(--green)':'var(--red)')+';margin-top:1px;text-align:right';
         div.textContent = (pos?'+':'') + gr.toFixed(1) + '%';
         td.appendChild(div);
       }
@@ -1061,7 +1120,7 @@ function handleHistInput(year, field, rawVal, isPct, inputEl) {
       ? [...INCOME_FIELDS, ...customIncomeFields]
       : [...RATIO_FIELDS,  ...customRatioFields];
     const summaryEl = document.getElementById('summary-block');
-    if (summaryEl) summaryEl.outerHTML = '<div id="summary-block">' + buildSummaryBlock(fields).slice(buildSummaryBlock(fields).indexOf('<div style="margin-top')) + '</div>';
+    if (summaryEl) summaryEl.innerHTML = buildSummaryBlock(fields);
   }, 80);
 }
 
