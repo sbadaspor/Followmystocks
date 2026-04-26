@@ -11,18 +11,18 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:      #07070e;
-      --card:    #0c0c18;
-      --border:  rgba(255,255,255,0.06);
-      --border-h:rgba(255,255,255,0.11);
-      --text:    #e4e4f0;
-      --dim:     #8888a0;
-      --muted:   #44445a;
-      --green:   #0fe07a;
-      --red:     #ff3d58;
-      --blue:    #6ba3ff;
+      --bg:      #f5f5fa;
+      --card:    #ffffff;
+      --border:  rgba(0,0,0,0.09);
+      --border-h:rgba(0,0,0,0.16);
+      --text:    #0f0f1a;
+      --dim:     #55556a;
+      --muted:   #9999b0;
+      --green:   #0a9955;
+      --red:     #d92d48;
+      --blue:    #3b6fdd;
       --orange:  #ff9c3d;
-      --accent:  #6153f5;
+      --accent:  #5344e8;
       --mono:    'JetBrains Mono', monospace;
     }
 
@@ -40,7 +40,7 @@
       height: 52px;
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 28px;
-      background: rgba(7,7,14,.92);
+      background: rgba(255,255,255,.95);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
     }
@@ -141,8 +141,8 @@
       font-family: var(--mono); font-size: 11px; font-weight: 600;
       cursor: pointer; transition: all .15s;
     }
-    .range-tab:hover { color: var(--dim); background: rgba(255,255,255,.04); }
-    .range-tab.active { color: var(--text); background: rgba(255,255,255,.08); }
+    .range-tab:hover { color: var(--dim); background: rgba(0,0,0,.03); }
+    .range-tab.active { color: var(--text); background: rgba(0,0,0,.06); }
 
     .chart-period-info { font-size: 13px; color: var(--muted); margin-top: 3px; }
     .chart-pct { font-family: var(--mono); font-size: 13px; font-weight: 500; }
@@ -159,7 +159,7 @@
       border-radius: 10px; overflow: hidden;
     }
 
-    .pos-item { background: rgba(255,255,255,.02); padding: 16px 18px; }
+    .pos-item { background: rgba(0,0,0,.02); padding: 16px 18px; }
     .pos-lbl {
       font-size: 9px; font-weight: 700; text-transform: uppercase;
       letter-spacing: .09em; color: var(--muted); margin-bottom: 8px;
@@ -199,7 +199,7 @@
 
     .data-tbl td {
       padding: 11px 14px 11px 0;
-      border-top: 1px solid rgba(255,255,255,.035);
+      border-top: 1px solid rgba(0,0,0,.07);
       font-size: 13px; text-align: right;
       font-family: var(--mono);
     }
@@ -223,7 +223,7 @@
 
     .annual-tbl td {
       padding: 10px 12px;
-      border-top: 1px solid rgba(255,255,255,.035);
+      border-top: 1px solid rgba(0,0,0,.07);
       font-size: 12px; text-align: right;
       font-family: var(--mono); white-space: nowrap;
     }
@@ -270,7 +270,7 @@
     .neg { color: var(--red);   }
 
     .skeleton {
-      background: linear-gradient(90deg, var(--card) 25%, rgba(255,255,255,.03) 50%, var(--card) 75%);
+      background: linear-gradient(90deg, var(--card) 25%, rgba(0,0,0,.03) 50%, var(--card) 75%);
       background-size: 300% 100%;
       animation: sk 1.6s ease infinite;
       border-radius: 6px; height: 14px; width: 80%;
@@ -330,8 +330,8 @@ let assetId, asset, holding, detail, isFollowed = false;
 let priceChart = null;
 
 // Chart.js defaults
-Chart.defaults.color          = '#8888a0';
-Chart.defaults.borderColor    = 'rgba(255,255,255,0.05)';
+Chart.defaults.color          = '#55556a';
+Chart.defaults.borderColor    = 'rgba(0,0,0,.08)';
 Chart.defaults.font.family    = "'Outfit', sans-serif";
 Chart.defaults.font.size      = 11;
 
@@ -726,14 +726,14 @@ async function renderPriceChart(range) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#0f0f1e', borderColor: 'rgba(255,255,255,.1)', borderWidth: 1,
+            backgroundColor: '#ffffff', borderColor: 'rgba(0,0,0,.12)', borderWidth: 1,
             bodyColor: '#e4e4f0', bodyFont: { family:"'JetBrains Mono'", size:12 },
             callbacks: { label: c => ` ${c.parsed.y != null ? c.parsed.y.toFixed(2)+' €' : '—'}` }
           }
         },
         scales: {
-          x: { grid:{display:false}, ticks:{maxTicksLimit:8,maxRotation:0,color:'#44445a',font:{size:10}}, border:{display:false} },
-          y: { position:'right', grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#44445a',font:{size:10},callback:v=>v.toFixed(2)+' €'}, border:{display:false} }
+          x: { grid:{display:false}, ticks:{maxTicksLimit:8,maxRotation:0,color:'#777790',font:{size:10}}, border:{display:false} },
+          y: { position:'right', grid:{color:'rgba(0,0,0,.07)'}, ticks:{color:'#777790',font:{size:10},callback:v=>v.toFixed(2)+' €'}, border:{display:false} }
         }
       }
     });
@@ -753,14 +753,14 @@ function baseChartOpts({ suffix='', decimals=2, isBar=false } = {}) {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor:'#0f0f1e', borderColor:'rgba(255,255,255,.1)', borderWidth:1,
+        backgroundColor:'#ffffff', borderColor:'rgba(0,0,0,.12)', borderWidth:1,
         bodyColor:'#e4e4f0', bodyFont:{family:"'JetBrains Mono'",size:11},
         callbacks: { label: c => ` ${c.parsed.y?.toFixed(decimals)}${suffix}` }
       }
     },
     scales: {
-      x: { grid:{display:false}, ticks:{color:'#44445a',font:{size:10}}, border:{display:false} },
-      y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#44445a',font:{size:10},callback:v=>v.toFixed(decimals)+suffix}, border:{display:false} }
+      x: { grid:{display:false}, ticks:{color:'#777790',font:{size:10}}, border:{display:false} },
+      y: { grid:{color:'rgba(0,0,0,.07)'}, ticks:{color:'#777790',font:{size:10},callback:v=>v.toFixed(decimals)+suffix}, border:{display:false} }
     }
   };
 }
@@ -814,13 +814,13 @@ function renderMarginsChart(ann) {
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false},
-        tooltip:{ backgroundColor:'#0f0f1e', borderColor:'rgba(255,255,255,.1)', borderWidth:1,
+        tooltip:{ backgroundColor:'#ffffff', borderColor:'rgba(0,0,0,.12)', borderWidth:1,
           callbacks:{ label:c=>` ${c.dataset.label}: ${c.parsed.y?.toFixed(1)}%` }
         }
       },
       scales:{
-        x:{ grid:{display:false}, ticks:{color:'#44445a',font:{size:10}}, border:{display:false} },
-        y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#44445a',font:{size:10},callback:v=>v+'%'}, border:{display:false} }
+        x:{ grid:{display:false}, ticks:{color:'#777790',font:{size:10}}, border:{display:false} },
+        y:{ grid:{color:'rgba(0,0,0,.07)'}, ticks:{color:'#777790',font:{size:10},callback:v=>v+'%'}, border:{display:false} }
       }
     }
   });
