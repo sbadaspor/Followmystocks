@@ -1120,7 +1120,8 @@ function removeCustomField(section, key) {
 
 // ── Segment editor ───────────────────────────────────────
 function buildSegmentEditor() {
-  const availYears = YEARS_LIST.slice(0, 10);
+  // Show ALL years in YEARS_LIST, not just first 10
+  const availYears = [...YEARS_LIST].sort((a,b) => b-a);
   const segYearChecks = availYears.map(y =>
     `<label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:normal;text-transform:none;letter-spacing:0;cursor:pointer">
       <input type="checkbox" ${segYears.includes(y)?'checked':''}
@@ -1178,8 +1179,16 @@ function setHistVal(year, field, rawVal, isPct) {
 }
 
 function toggleSegYear(year, checked) {
-  if (checked && !segYears.includes(year)) segYears = [...segYears,year].sort((a,b)=>b-a);
-  else if (!checked) segYears = segYears.filter(y=>y!==year);
+  if (checked && !segYears.includes(year)) {
+    segYears = [...segYears, year].sort((a,b) => b-a);
+    // Init this year with existing segment names so rows appear
+    if (!histSegments[year]) {
+      const existingNames = [...new Set(Object.values(histSegments).flat().map(s => s.name).filter(Boolean))];
+      histSegments[year] = existingNames.map((name, i) => ({ name, revenue: null, sort_order: i }));
+    }
+  } else if (!checked) {
+    segYears = segYears.filter(y => y !== year);
+  }
   document.getElementById('hist-body').innerHTML = buildHistBody();
 }
 
