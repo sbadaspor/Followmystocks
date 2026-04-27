@@ -590,7 +590,7 @@
       <p class="hero-desc">A Visa não é um banco nem emite cartões — é a "autoestrada" por onde a informação do dinheiro circula. Opera a maior rede global de pagamentos digitais, ligando consumidores, comerciantes, instituições financeiras e governos.</p>
     </div>
     <div class="hero-price-block">
-      <div class="live-price" id="live-price">— €</div>
+      <div class="live-price" id="live-price">— $</div>
       <div class="live-change" id="live-change">—</div>
       <div class="live-badge"><div class="live-dot"></div> EM TEMPO REAL</div>
     </div>
@@ -1006,9 +1006,9 @@ async function fetchPrice() {
     const chgAbs= q.regularMarketChange;
     const pos   = chg >= 0;
 
-    document.getElementById('live-price').textContent = price.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
+    document.getElementById('live-price').textContent = price.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' $';
     const el = document.getElementById('live-change');
-    el.textContent = (pos?'▲ +':'▼ ') + Math.abs(chgAbs).toFixed(2) + ' € (' + (pos?'+':'') + chg.toFixed(2) + '%)';
+    el.textContent = (pos?'▲ +':'▼ ') + Math.abs(chgAbs).toFixed(2) + ' $ (' + (pos?'+':'') + chg.toFixed(2) + '%)';
     el.className = 'live-change ' + (pos ? 'pos' : 'neg');
 
     // Intrinsic vs market price
