@@ -936,7 +936,7 @@ async function fetchQuotes(tickers) {
       change:        q.regularMarketChange,
       changePct:     q.regularMarketChangePercent,
       pe:            q.trailingPE,
-      currency:      q.currency || 'EUR'
+      currency:      q.currency || 'USD'
     };
   });
   return out;
@@ -965,14 +965,18 @@ function renderPortfolio(animate = false) {
     return s + ((d.quote?.change || 0) * d.holding.num_shares);
   }, 0);
 
+  // Determine if all assets share the same currency
+  const currencies = [...new Set(portfolioData.map(d => d.quote?.currency).filter(Boolean))];
+  const commonSym = currencies.length === 1 ? currSym(currencies[0]) : '';
+
   // Summary bar
-  setEl('sum-total',      fmt(totalValue) + ' €');
-  setEl('sum-invested',   fmt(totalInvested) + ' €');
+  setEl('sum-total',      fmt(totalValue) + (commonSym ? ' ' + commonSym : ''));
+  setEl('sum-invested',   fmt(totalInvested) + (commonSym ? ' ' + commonSym : ''));
   const rPos = totalReturn >= 0;
-  setEl('sum-return',     (rPos ? '+' : '') + fmt(totalReturn) + ' €', rPos ? 'pos' : 'neg');
+  setEl('sum-return',     (rPos ? '+' : '') + fmt(totalReturn) + (commonSym ? ' ' + commonSym : ''), rPos ? 'pos' : 'neg');
   setEl('sum-return-pct', (rPos ? '+' : '') + pct(totalReturn / totalInvested * 100), rPos ? 'pos' : 'neg');
   const tPos = todayChange >= 0;
-  setEl('sum-today',      (tPos ? '+' : '') + fmt(todayChange) + ' €', tPos ? 'pos' : 'neg');
+  setEl('sum-today',      (tPos ? '+' : '') + fmt(todayChange) + (commonSym ? ' ' + commonSym : ''), tPos ? 'pos' : 'neg');
 
   const n = portfolioData.length;
   document.getElementById('portfolio-meta').textContent =
@@ -1010,14 +1014,16 @@ function renderPortfolio(animate = false) {
     const price    = quote?.price    || 0;
     const changePct = quote?.changePct || 0;
     const pe       = quote?.pe;
+    const curr     = quote?.currency || 'USD';
+    const sym      = currSym(curr);
     const shares   = +holding.num_shares;
     const avgP     = +holding.avg_price;
     const posVal   = price * shares;
     const weight   = totalValue > 0 ? posVal / totalValue * 100 : 0;
-    const retEur   = (price - avgP) * shares;
+    const retAmt   = (price - avgP) * shares;
     const retPct   = avgP > 0 ? (price - avgP) / avgP * 100 : 0;
     const isPos    = changePct >= 0;
-    const retPos   = retEur >= 0;
+    const retPos   = retAmt >= 0;
 
     return `
     <div class="asset-card ${isPos ? 'pos' : 'neg'}" data-ticker="${asset.ticker}" onclick="openAsset('${asset.id}','${asset.ticker}')">
@@ -1032,7 +1038,7 @@ function renderPortfolio(animate = false) {
       <div class="card-price-row">
         <div>
           <span class="card-price">${fmtPrice(price)}</span>
-          <span class="card-currency"> €</span>
+          <span class="card-currency"> ${sym}</span>
         </div>
         <div class="card-change ${isPos ? 'pos' : 'neg'}">
           ${isPos ? '▲ +' : '▼ '}${Math.abs(changePct).toFixed(2)}%
@@ -1048,7 +1054,7 @@ function renderPortfolio(animate = false) {
         </div>
         <div class="stat">
           <div class="stat-lbl">Preço Médio</div>
-          <div class="stat-val">${fmtPrice(avgP)} €</div>
+          <div class="stat-val">${fmtPrice(avgP)} ${sym}</div>
         </div>
         <div class="stat">
           <div class="stat-lbl">Peso</div>
@@ -1063,7 +1069,7 @@ function renderPortfolio(animate = false) {
       <div class="return-row">
         <div class="ret-lbl">Retorno</div>
         <div class="ret-vals">
-          <span class="ret-eur ${retPos ? 'pos' : 'neg'}">${retPos ? '+' : ''}${fmt(retEur)} €</span>
+          <span class="ret-eur ${retPos ? 'pos' : 'neg'}">${retPos ? '+' : ''}${fmt(retAmt)} ${sym}</span>
           <span class="ret-pct ${retPos ? 'pos' : 'neg'}">${retPos ? '+' : ''}${pct(retPct)}</span>
         </div>
       </div>
@@ -1122,13 +1128,13 @@ function renderDemo() {
   const todayChange   = demo.reduce((s,d) => s + (d.price * d.chPct/100) * d.shares, 0);
 
   document.getElementById('summary-bar').style.display = 'flex';
-  setEl('sum-total',      fmt(totalValue) + ' €');
-  setEl('sum-invested',   fmt(totalInvested) + ' €');
+  setEl('sum-total',      fmt(totalValue) + ' $');
+  setEl('sum-invested',   fmt(totalInvested) + ' $');
   const rPos = totalReturn >= 0;
-  setEl('sum-return',     (rPos?'+':'') + fmt(totalReturn) + ' €', rPos?'pos':'neg');
+  setEl('sum-return',     (rPos?'+':'') + fmt(totalReturn) + ' $', rPos?'pos':'neg');
   setEl('sum-return-pct', (rPos?'+':'') + pct(totalReturn/totalInvested*100), rPos?'pos':'neg');
   const tPos = todayChange >= 0;
-  setEl('sum-today',      (tPos?'+':'') + fmt(todayChange) + ' €', tPos?'pos':'neg');
+  setEl('sum-today',      (tPos?'+':'') + fmt(todayChange) + ' $', tPos?'pos':'neg');
 
   document.getElementById('portfolio-meta').textContent = `${demo.length} posições · dados de demonstração`;
 
@@ -1150,21 +1156,21 @@ function renderDemo() {
       <div class="card-price-row">
         <div>
           <span class="card-price">${fmtPrice(a.price)}</span>
-          <span class="card-currency"> €</span>
+          <span class="card-currency"> $</span>
         </div>
         <div class="card-change ${isPos?'pos':'neg'}">${isPos?'▲ +':'▼ '}${Math.abs(a.chPct).toFixed(2)}%</div>
       </div>
       <div class="sparkline-wrap">${sparkline(a.chart, isPos)}</div>
       <div class="card-stats">
         <div class="stat"><div class="stat-lbl">Nº Ações</div><div class="stat-val">${fmtShares(a.shares)}</div></div>
-        <div class="stat"><div class="stat-lbl">Preço Médio</div><div class="stat-val">${fmtPrice(a.avg)} €</div></div>
+        <div class="stat"><div class="stat-lbl">Preço Médio</div><div class="stat-val">${fmtPrice(a.avg)} $</div></div>
         <div class="stat"><div class="stat-lbl">Peso</div><div class="stat-val">${weight.toFixed(1)}%</div></div>
         <div class="stat"><div class="stat-lbl">P/E</div><div class="stat-val">${a.pe ? a.pe.toFixed(1) : '—'}</div></div>
       </div>
       <div class="return-row">
         <div class="ret-lbl">Retorno</div>
         <div class="ret-vals">
-          <span class="ret-eur ${retPos?'pos':'neg'}">${retPos?'+':''}${fmt(retEur)} €</span>
+          <span class="ret-eur ${retPos?'pos':'neg'}">${retPos?'+':''}${fmt(retEur)} $</span>
           <span class="ret-pct ${retPos?'pos':'neg'}">${retPos?'+':''}${pct(retPct)}</span>
         </div>
       </div>
@@ -1194,6 +1200,15 @@ function fmtShares(n) {
   return n % 1 === 0 ? n.toFixed(0) : n.toFixed(n < 1 ? 4 : 2);
 }
 function pct(n) { return (n ?? 0).toFixed(2) + '%'; }
+function currSym(currency) {
+  if (!currency) return '$';
+  switch (currency.toUpperCase()) {
+    case 'EUR': return '€';
+    case 'GBP': return '£';
+    case 'USD': return '$';
+    default:    return currency + ' ';
+  }
+}
 function setEl(id, val, cls) {
   const el = document.getElementById(id);
   if (!el) return;
