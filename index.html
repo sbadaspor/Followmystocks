@@ -33,6 +33,60 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    /* ─── PASSWORD GATE ──────────────────────── */
+    #gate {
+      position: fixed; inset: 0; z-index: 9999;
+      background: #07070e;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gate-box {
+      width: 100%; max-width: 360px;
+      padding: 40px 36px;
+      background: #0f0f1c;
+      border: 1px solid rgba(255,255,255,.07);
+      border-radius: 18px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.6);
+    }
+    .gate-logo {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 28px;
+    }
+    .gate-mark {
+      width: 32px; height: 32px; border-radius: 9px;
+      background: var(--accent); display: grid; place-items: center;
+      font-size: 14px; font-weight: 700; color: #fff;
+    }
+    .gate-brand { font-size: 15px; font-weight: 600; color: #e4e4f0; }
+    .gate-title { font-size: 20px; font-weight: 600; color: #e4e4f0; margin-bottom: 6px; }
+    .gate-sub   { font-size: 13px; color: #55556a; margin-bottom: 24px; }
+    .gate-input-wrap { position: relative; margin-bottom: 12px; }
+    .gate-input {
+      width: 100%; padding: 12px 44px 12px 14px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 10px;
+      color: #e4e4f0; font-family: 'Outfit', sans-serif; font-size: 14px;
+      outline: none; transition: border-color .15s;
+    }
+    .gate-input:focus { border-color: var(--accent); }
+    .gate-eye {
+      position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: #55556a;
+      display: flex; align-items: center; padding: 0;
+    }
+    .gate-btn {
+      width: 100%; padding: 13px;
+      background: var(--accent); border: none; border-radius: 10px;
+      color: #fff; font-family: 'Outfit', sans-serif;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: opacity .15s;
+    }
+    .gate-btn:hover { opacity: .88; }
+    .gate-error {
+      font-size: 12px; color: #ff3d58;
+      margin-top: 10px; min-height: 16px; text-align: center;
+    }
+
     /* ─── HEADER ─────────────────────────────── */
     header {
       position: sticky;
@@ -688,6 +742,27 @@
   </style>
 </head>
 <body>
+
+<!-- ─────────── PASSWORD GATE ───────────────── -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-logo">
+      <div class="gate-mark">F</div>
+      <span class="gate-brand">Follow Stocks</span>
+    </div>
+    <div class="gate-title">Acesso privado</div>
+    <div class="gate-sub">Introduz a password para continuar</div>
+    <div class="gate-input-wrap">
+      <input class="gate-input" type="password" id="gate-pwd" placeholder="Password"
+        onkeydown="if(event.key==='Enter')gateLogin()">
+      <button class="gate-eye" onclick="toggleGatePwd()" tabindex="-1" title="Mostrar/ocultar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <button class="gate-btn" onclick="gateLogin()">Entrar</button>
+    <div class="gate-error" id="gate-error"></div>
+  </div>
+</div>
 
 <!-- ─────────── HEADER ─────────────────────────── -->
 <header>
@@ -1513,6 +1588,30 @@ async function toggleStar(assetId, btn) {
   }
   updateCounts();
   if (listingFilter === 'seguidos') renderListingTable();
+}
+
+// ── Password Gate ──────────────────────────────────
+const SITE_PWD = '6qfO5CJ2';
+function gateLogin() {
+  const pwd = document.getElementById('gate-pwd').value;
+  const err = document.getElementById('gate-error');
+  if (pwd === SITE_PWD) {
+    sessionStorage.setItem('fs-auth', '1');
+    document.getElementById('gate').style.display = 'none';
+  } else {
+    err.textContent = 'Password incorreta.';
+    document.getElementById('gate-pwd').value = '';
+    document.getElementById('gate-pwd').focus();
+  }
+}
+function toggleGatePwd() {
+  const i = document.getElementById('gate-pwd');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+if (sessionStorage.getItem('fs-auth') === '1') {
+  document.getElementById('gate').style.display = 'none';
+} else {
+  document.getElementById('gate-pwd').focus();
 }
 
 init();
