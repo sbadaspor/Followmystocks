@@ -428,6 +428,120 @@
     .history-inner td:first-child { text-align: left; font-weight: 700; min-width: 60px; }
     .history-inner tr:last-child td { border-bottom: none; }
 
+    /* ── HISTÓRIA ACCORDION ─────────────────── */
+    .historia-block {
+      margin-bottom: 20px;
+      border-radius: 14px;
+      border: 1px solid rgba(97,83,245,.22);
+      overflow: hidden;
+      background: var(--card);
+    }
+    .historia-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 28px;
+      cursor: pointer;
+      user-select: none;
+      background: linear-gradient(90deg, rgba(97,83,245,.07) 0%, rgba(97,83,245,.02) 100%);
+      transition: background .15s;
+    }
+    .historia-header:hover { background: linear-gradient(90deg, rgba(97,83,245,.12) 0%, rgba(97,83,245,.05) 100%); }
+    .historia-header-left { display: flex; align-items: center; gap: 12px; }
+    .historia-icon-wrap {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: rgba(97,83,245,.15); display: flex; align-items: center; justify-content: center;
+      color: var(--accent); flex-shrink: 0;
+    }
+    .historia-title {
+      font-size: 15px; font-weight: 600; letter-spacing: -.01em; color: var(--text);
+    }
+    .historia-subtitle {
+      font-size: 11px; color: var(--muted); margin-top: 2px;
+    }
+    .historia-chevron {
+      color: var(--accent); transition: transform .25s ease;
+      display: flex; align-items: center;
+    }
+    .historia-block.open .historia-chevron { transform: rotate(180deg); }
+    .historia-body {
+      display: none;
+      padding: 0 32px 32px;
+      border-top: 1px solid rgba(97,83,245,.12);
+    }
+    .historia-block.open .historia-body { display: block; }
+
+    .hist-timeline {
+      position: relative;
+      padding: 28px 0 8px;
+    }
+    .hist-timeline::before {
+      content: ''; position: absolute;
+      left: 12px; top: 28px; bottom: 8px; width: 2px;
+      background: linear-gradient(180deg, var(--accent) 0%, rgba(97,83,245,.1) 100%);
+    }
+    .hist-event {
+      display: flex; gap: 20px; margin-bottom: 24px; position: relative;
+    }
+    .hist-dot {
+      flex-shrink: 0; width: 26px; height: 26px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: var(--card);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1;
+    }
+    .hist-dot-inner {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent);
+    }
+    .hist-content { flex: 1; padding-top: 2px; }
+    .hist-year {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; font-weight: 600; color: var(--accent);
+      margin-bottom: 3px; letter-spacing: .04em;
+    }
+    .hist-event-title {
+      font-size: 14px; font-weight: 600; color: var(--text);
+      margin-bottom: 4px; letter-spacing: -.01em;
+    }
+    .hist-event-desc {
+      font-size: 13px; color: var(--dim); line-height: 1.65;
+    }
+
+    .hist-section-title {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--muted);
+      padding: 24px 0 12px;
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+    }
+    .hist-section-title:first-child { border-top: none; padding-top: 0; }
+
+    .hist-brand-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+      margin-top: 4px;
+    }
+    .hist-brand-card {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .hist-brand-card-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .09em; color: var(--muted); margin-bottom: 5px;
+    }
+    .hist-brand-card-val {
+      font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.5;
+    }
+    .hist-fonte {
+      font-size: 11px; color: var(--muted);
+      margin-top: 24px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .hist-fonte a { color: var(--accent); text-decoration: none; }
+    .hist-fonte a:hover { text-decoration: underline; }
+
     /* ── SEGMENT TOOLTIPS ───────────────────── */
     .seg-tooltip-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: default; }
     .seg-info-btn {
@@ -486,6 +600,8 @@
 
   <!-- SIDEBAR NAV -->
   <aside class="side-nav">
+    <div class="side-nav-section">Empresa</div>
+    <a href="#historia"><div class="side-nav-dot"></div>História</a>
     <div class="side-nav-section">Visão Geral</div>
     <a href="#intrinsic"><div class="side-nav-dot"></div>Valor Intrínseco</a>
     <a href="#metrics"><div class="side-nav-dot"></div>Key Metrics</a>
@@ -505,6 +621,153 @@
 
   <!-- MAIN CONTENT -->
   <div>
+
+  <div id="historia"></div>
+  <!-- HISTÓRIA -->
+  <div class="historia-block" id="historia-block">
+    <div class="historia-header" onclick="toggleHistoria()">
+      <div class="historia-header-left">
+        <div class="historia-icon-wrap">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <div class="historia-title">História da Visa</div>
+          <div class="historia-subtitle">Da BankAmericard à rede de pagamentos global · 1958 – Presente</div>
+        </div>
+      </div>
+      <div class="historia-chevron">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="historia-body">
+
+      <div class="hist-section-title">Cronologia</div>
+      <div class="hist-timeline">
+
+        <div class="hist-event">
+          <div class="hist-dot"><div class="hist-dot-inner"></div></div>
+          <div class="hist-content">
+            <div class="hist-year">1958</div>
+            <div class="hist-event-title">Nascimento do BankAmericard</div>
+            <div class="hist-event-desc">O Bank of America lança o <strong>BankAmericard</strong> em Fresno, Califórnia — o primeiro cartão de crédito bancário de utilização geral do mundo. No primeiro mês, 60 000 cartões são enviados por correio para residentes locais, numa operação então designada de "Fresno Drop". O cartão permitia crédito renovável com uma linha inicial de 300 a 500 dólares, algo revolucionário na época.</div>
+          </div>
+        </div>
+
+        <div class="hist-event">
+          <div class="hist-dot"><div class="hist-dot-inner"></div></div>
+          <div class="hist-content">
+            <div class="hist-year">1966</div>
+            <div class="hist-event-title">Expansão Nacional: criação do NBI</div>
+            <div class="hist-event-desc">O Bank of America cria o <strong>National BankAmericard Inc. (NBI)</strong> para gerir e licenciar o programa a outros bancos norte-americanos. Este passo estrutural transformou o que era um produto exclusivo do BofA numa rede aberta — qualquer banco membro podia emitir cartões BankAmericard, crescendo rapidamente a aceitação nacional.</div>
+          </div>
+        </div>
+
+        <div class="hist-event">
+          <div class="hist-dot"><div class="hist-dot-inner"></div></div>
+          <div class="hist-content">
+            <div class="hist-year">1974</div>
+            <div class="hist-event-title">IBANCO: a primeira internacionalização</div>
+            <div class="hist-event-desc">É criado o <strong>IBANCO</strong>, consórcio internacional que agrupa as organizações de cartões fora dos EUA, permitindo que instituições de outros países participem na rede sem estar sob jurisdição americana. Este passo foi crucial para que países como o Reino Unido, Japão e Brasil começassem a emitir cartões integrados na mesma rede global.</div>
+          </div>
+        </div>
+
+        <div class="hist-event">
+          <div class="hist-dot"><div class="hist-dot-inner"></div></div>
+          <div class="hist-content">
+            <div class="hist-year">1976</div>
+            <div class="hist-event-title">Nasce a marca VISA</div>
+            <div class="hist-event-desc">O NBI e o IBANCO unificam-se sob o nome <strong>Visa</strong>, escolhido pela sua pronúncia universal — reconhecível em praticamente todos os idiomas sem alteração de significado. O icónico logo com as listras azul e dourado é adotado. O diretor executivo Dee Hock liderou esta transformação, criando o modelo de associação descentralizada que definiria a empresa durante décadas.</div>
+          </div>
+        </div>
+
+        <div class="hist-event">
+          <div class="hist-dot"><div class="hist-dot-inner"></div></div>
+          <div class="hist-content">
+            <div class="hist-year">1979 – 1983</div>
+            <div class="hist-event-title">ATMs e cartão de débito</div>
+            <div class="hist-event-desc">A Visa lança os seus primeiros programas de <strong>cartão de débito</strong> e começa a integrar a rede com caixas automáticos (ATMs). Em 1983, a rede PLUS de ATMs é criada, tornando possível o levantamento de dinheiro em terminais em todo o mundo com cartão Visa.</div>
+          </div>
+        </div>
+
+        <div class="hist-event">
+          <div class="hist-dot"><div class="hist-dot-inner"></div></div>
+          <div class="hist-content">
+            <div class="hist-year">1994</div>
+            <div class="hist-event-title">Patrocínio Olímpico e globalização da marca</div>
+            <div class="hist-event-desc">A Visa torna-se parceira oficial dos <strong>Jogos Olímpicos</strong>, uma das parcerias de marketing mais duradouras da história corporativa. Com o slogan <em>"It's everywhere you want to be"</em>, a marca consolida-se como símbolo global de aceitação universal. Nesta década, a Visa ultrapassa a MasterCard em volume de transações a nível mundial.</div>
+          </div>
+        </div>
+
+        <div class="hist-event">
+          <div class="hist-dot"><div class="hist-dot-inner"></div></div>
+          <div class="hist-content">
+            <div class="hist-year">2006 – 2007</div>
+            <div class="hist-event-title">Reestruturação: nasce a Visa Inc.</div>
+            <div class="hist-event-desc">As várias entidades regionais da Visa (Visa USA, Visa Canada, Visa International e Visa CEMEA) fundem-se para criar a <strong>Visa Inc.</strong>, uma empresa unificada com fins lucrativos sediada em San Francisco. Esta consolidação prepara o terreno para a abertura ao mercado de capitais. O slogan evolui para <em>"All it takes"</em>, sublinhando a simplicidade e universalidade da rede.</div>
+          </div>
+        </div>
+
+        <div class="hist-event">
+          <div class="hist-dot"><div class="hist-dot-inner"></div></div>
+          <div class="hist-content">
+            <div class="hist-year">2008</div>
+            <div class="hist-event-title">IPO histórico na NYSE</div>
+            <div class="hist-event-desc">Em março de 2008, a Visa realiza a sua <strong>Oferta Pública Inicial (IPO)</strong> na Bolsa de Nova Iorque, arrecadando cerca de 17,9 mil milhões de dólares — a maior OPV da história americana até então. As ações começam a negociar sob o símbolo <strong>V</strong>. A empresa não emite crédito; o seu modelo de negócio baseia-se nas comissões cobradas sobre cada transação que circula na sua rede.</div>
+          </div>
+        </div>
+
+        <div class="hist-event">
+          <div class="hist-dot"><div class="hist-dot-inner"></div></div>
+          <div class="hist-content">
+            <div class="hist-year">2016</div>
+            <div class="hist-event-title">Aquisição da Visa Europe</div>
+            <div class="hist-event-desc">A Visa Inc. adquire a <strong>Visa Europe</strong> — que tinha permanecido como entidade independente sem fins lucrativos após o IPO — por cerca de 21,2 mil milhões de euros. Esta operação reunifica completamente a rede global e reforça a posição da empresa no mercado europeu, num contexto de crescente regulação dos sistemas de pagamento (Diretiva PSD2).</div>
+          </div>
+        </div>
+
+        <div class="hist-event">
+          <div class="hist-dot"><div class="hist-dot-inner"></div></div>
+          <div class="hist-content">
+            <div class="hist-year">2020 – Presente</div>
+            <div class="hist-event-title">Era digital: pagamentos sem contacto, cripto e IA</div>
+            <div class="hist-event-desc">A pandemia de COVID-19 acelera a adoção de pagamentos contactless e digitais. A Visa investe fortemente em <strong>tokenização, pagamentos instantâneos (Visa Direct), open banking</strong> e infraestrutura para ativos digitais. Em 2021, lança o programa piloto de liquidações em USDC (stablecoin), posicionando-se na fronteira entre finanças tradicionais e cripto. Atualmente, a rede processa mais de 200 mil milhões de transações por ano em mais de 200 países e territórios.</div>
+          </div>
+        </div>
+
+      </div><!-- /hist-timeline -->
+
+      <div class="hist-section-title">Identidade e Marca</div>
+      <div class="hist-brand-grid">
+        <div class="hist-brand-card">
+          <div class="hist-brand-card-label">Nome</div>
+          <div class="hist-brand-card-val">Visa — escolhido por ser universalmente reconhecível em qualquer idioma, sem perda de significado ou pronúncia.</div>
+        </div>
+        <div class="hist-brand-card">
+          <div class="hist-brand-card-label">Cores originais</div>
+          <div class="hist-brand-card-val">Azul (confiança, segurança) e Dourado/Amarelo (otimismo, prosperidade). Presentes no logo desde 1976.</div>
+        </div>
+        <div class="hist-brand-card">
+          <div class="hist-brand-card-label">Slogans históricos</div>
+          <div class="hist-brand-card-val">"It's everywhere you want to be" (1985–2014) · "All it takes" · "Everywhere you want to be"</div>
+        </div>
+        <div class="hist-brand-card">
+          <div class="hist-brand-card-label">Presença global</div>
+          <div class="hist-brand-card-val">+200 países e territórios · +4,4 mil milhões de cartões emitidos · Aceite em +130 milhões de pontos de venda.</div>
+        </div>
+        <div class="hist-brand-card">
+          <div class="hist-brand-card-label">Modelo de negócio</div>
+          <div class="hist-brand-card-val">A Visa <em>não</em> emite crédito nem assume risco de crédito. É uma rede de processamento pura — cobra taxas sobre o volume de transações (interchange fees e service fees).</div>
+        </div>
+        <div class="hist-brand-card">
+          <div class="hist-brand-card-label">Fundador visionário</div>
+          <div class="hist-brand-card-val">Dee Hock (1929–2022) — criou o modelo de "caordic organization" da Visa, estrutura descentralizada e colaborativa que permitiu a escala global.</div>
+        </div>
+      </div>
+
+
+
+    </div><!-- /historia-body -->
+  </div><!-- /historia-block -->
 
   <div id="intrinsic"></div>
   <!-- INTRINSIC VALUE -->
@@ -1519,7 +1782,7 @@ init();
 
 // Sidebar active highlight on scroll
 const navLinks = document.querySelectorAll('.side-nav a');
-const sections = ['intrinsic','metrics','dados-gerais','racios','charts-rev','charts-margins','dividends','fcf','annual','segments','ratios-annual'];
+const sections = ['historia','intrinsic','metrics','dados-gerais','racios','charts-rev','charts-margins','dividends','fcf','annual','segments','ratios-annual'];
 
 window.addEventListener('scroll', () => {
   let current = sections[0];
@@ -1531,6 +1794,11 @@ window.addEventListener('scroll', () => {
     a.classList.toggle('active', a.getAttribute('href') === '#' + current);
   });
 }, { passive: true });
+
+function toggleHistoria() {
+  const block = document.getElementById('historia-block');
+  block.classList.toggle('open');
+}
 </script>
 </body>
 </html>
