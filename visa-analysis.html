@@ -391,24 +391,39 @@
       flex-shrink: 0; vertical-align: middle;
     }
     .metric-row.expanded .expand-icon { transform: rotate(90deg); background: rgba(83,68,232,.2); }
+    .history-row { display: none; }
+    .history-row.open { display: table-row; }
     .history-row td { padding: 0 !important; border-bottom: 2px solid rgba(83,68,232,.3) !important; }
     .history-inner {
       background: rgba(83,68,232,.025); border-top: 1px solid rgba(83,68,232,.1);
-      overflow-x: auto; padding: 0;
+      display: flex; /* use flex not grid — works inside td */
+      overflow-x: auto;
     }
-    .history-inner table { min-width: 500px; border-collapse: collapse; width: 100%; }
+    .history-inner .hist-table-wrap {
+      flex-shrink: 0;
+      min-width: 220px;
+      max-height: 340px;
+      overflow-y: auto;
+    }
+    .history-inner .hist-chart-wrap {
+      flex: 1;
+      min-width: 260px;
+      padding: 14px 16px 8px;
+      border-left: 1px solid var(--border);
+    }
+    .history-inner table { border-collapse: collapse; width: 100%; }
     .history-inner th {
       padding: 9px 12px; font-size: 9.5px; font-weight: 700;
       text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
       text-align: right; white-space: nowrap;
       background: rgba(83,68,232,.05); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 1;
     }
     .history-inner th:first-child { text-align: left; }
     .history-inner td {
       padding: 9px 12px; text-align: right;
       font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
-      border-bottom: 1px solid rgba(0,0,0,.04);
-      color: var(--text);
+      border-bottom: 1px solid rgba(0,0,0,.04); color: var(--text);
     }
     .history-inner td:first-child { text-align: left; font-weight: 700; min-width: 60px; }
     .history-inner tr:last-child td { border-bottom: none; }
@@ -1108,8 +1123,7 @@ function toggleHistoryStatic(key, label, invert, wrapperId) {
   const fmt = f.fmt || (v => v != null ? (f.isPct ? (v*100).toFixed(2)+'%' : v.toFixed(2)) : '—');
 
   // Table
-  let h = '<div style="display:grid;grid-template-columns:220px 1fr;gap:0">';
-  h += '<div><table style="width:100%"><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
+  let h = '<div class="hist-table-wrap"><table><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
   f.data.forEach((v, i) => {
     const prev = f.data[i+1];
     let yoy = '—';
@@ -1177,12 +1191,11 @@ function toggleHistoryStatic(key, label, invert, wrapperId) {
       + xLbls
       + '</svg>';
 
-    h += '<div style="padding:16px 12px 8px;border-left:1px solid var(--border)">'
+    h += '<div class="hist-chart-wrap">'
       + '<div style="font-size:10px;font-weight:600;color:var(--dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em">' + label + '</div>'
       + svg
       + '</div>';
   }
-  h += '</div>';
   inner.innerHTML = h;
 }
 let sbAnnual   = [];  // rows from asset_annual_data
@@ -1343,8 +1356,7 @@ function toggleHistory(key, label, invert, wrapperId) {
   const pctKeys = ['gross_margin','op_margin','net_margin','roic'];
   const isPct   = pctKeys.includes(key);
 
-  let h = '<div style="display:grid;grid-template-columns:220px 1fr;gap:0">';
-  h += '<div><table style="width:100%"><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
+  let h = '<div class="hist-table-wrap"><table><thead><tr><th>Ano</th><th>Valor</th><th>YoY</th></tr></thead><tbody>';
   sbYears.forEach((year, i) => {
     const v    = getVal(key, year);
     const prev = i < sbYears.length-1 ? getVal(key, sbYears[i+1]) : null;
@@ -1381,9 +1393,8 @@ function toggleHistory(key, label, invert, wrapperId) {
     const svg='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="max-width:100%">'
       +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+col+'" stop-opacity="0.18"/><stop offset="100%" stop-color="'+col+'" stop-opacity="0.01"/></linearGradient></defs>'
       +grid+(fillD?'<path d="'+fillD+'" fill="url(#'+gid+')"/>':'')+(pathD?'<path d="'+pathD+'" stroke="'+col+'" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>':'')+xLbls+'</svg>';
-    h+='<div style="padding:16px 12px 8px;border-left:1px solid var(--border)"><div style="font-size:10px;font-weight:600;color:var(--dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em">'+label+'</div>'+svg+'</div>';
+    h += '<div class="hist-chart-wrap"><div style="font-size:10px;font-weight:600;color:var(--dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.07em">'+label+'</div>'+svg+'</div>';
   }
-  h += '</div>';
   inner.innerHTML = h;
 }
 
