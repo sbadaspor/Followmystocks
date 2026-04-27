@@ -435,7 +435,7 @@
 <script>
 const SUPABASE_URL      = 'https://xzxnjifpgvshzlsxhags.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6eG5qaWZwZ3ZzaHpsc3hoYWdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MDYzMjQsImV4cCI6MjA5MjQ4MjMyNH0.HlfyTZxvcPcPTR0yWCBUVU8vKm9ncaPVSqBW9LhJvE4';
-const ADMIN_PWD = '6qfO5CJ2@';
+const ADMIN_PWD = '6qfO5CJ2';
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let allAssets = [], allHoldings = [], currentTab = 'overview';
@@ -1039,7 +1039,7 @@ function buildAnnualTable(fields, section) {
       } else {
         // Editable input cell
         html += `<td style="padding:4px 6px;background:${bg};border-bottom:1px solid var(--border);border-right:1px solid var(--border);vertical-align:middle">
-          <input class="ag-input" type="number" step="any"
+          <input class="ag-input" type="text" inputmode="decimal"
             data-year="${year}" data-field="${f.key}" data-pct="${f.isPct||false}"
             value="${dispVal}" placeholder="—"
             oninput="handleHistInput(${year},'${f.key}',this.value,${f.isPct||false},this)">
@@ -1070,7 +1070,19 @@ function handleHistInput(year, field, rawVal, isPct, inputEl) {
   setHistVal(year, field, rawVal, isPct);
   const autoTriggers = ['revenue','gross_profit','op_income','net_income'];
   if (autoTriggers.includes(field)) {
-    setTimeout(() => { document.getElementById('hist-body').innerHTML = buildHistBody(); }, 80);
+    // Save cursor position and current value before rebuild
+    const cursorPos = inputEl.selectionStart;
+    const savedVal  = inputEl.value;
+    setTimeout(() => {
+      document.getElementById('hist-body').innerHTML = buildHistBody();
+      // Restore focus to the same cell and cursor position
+      const restored = document.querySelector(`.ag-input[data-year="${year}"][data-field="${field}"]`);
+      if (restored) {
+        restored.value = savedVal;
+        restored.focus();
+        try { restored.setSelectionRange(cursorPos, cursorPos); } catch(e) {}
+      }
+    }, 80);
     return;
   }
   setTimeout(() => {
@@ -1157,7 +1169,7 @@ function buildSegmentEditor() {
       const segs = histSegments[year] || [];
       const s    = segs.find(s=>s.name===name);
       const val  = s ? s.revenue : '';
-      html += `<div class="seg-cell"><input class="seg-val-input" type="number" step="any" value="${val!==''?val:''}" placeholder="—" oninput="setSegVal('${name}',${year},this.value)"></div>`;
+      html += `<div class="seg-cell"><input class="seg-val-input" type="text" inputmode="decimal" value="${val!==''?val:''}" placeholder="—" oninput="setSegVal('${name}',${year},this.value)"></div>`;
     });
     html += `<div class="seg-cell"><button onclick="removeSegRow(${idx})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:0 4px">&times;</button></div></div>`;
   });
@@ -1173,7 +1185,9 @@ function buildSegmentEditor() {
 function setHistVal(year, field, rawVal, isPct) {
   if (!histData[year]) histData[year] = {};
   if (rawVal===''||rawVal==null) { histData[year][field]=null; return; }
-  const val = parseFloat(rawVal);
+  // Accept both dot and comma as decimal separator
+  const normalized = String(rawVal).replace(',', '.');
+  const val = parseFloat(normalized);
   if (isNaN(val)) return;
   histData[year][field] = isPct ? val/100 : val;
 }
@@ -1219,7 +1233,7 @@ function setSegVal(segName, year, rawVal) {
   if (!histSegments[year]) histSegments[year]=[];
   let seg = histSegments[year].find(s=>s.name===segName);
   if (!seg) { seg={name:segName,revenue:null,sort_order:histSegments[year].length}; histSegments[year].push(seg); }
-  seg.revenue = rawVal!==''?parseFloat(rawVal):null;
+  seg.revenue = rawVal!=='' ? parseFloat(String(rawVal).replace(',','.')) : null;
 }
 
 // ── Save ─────────────────────────────────────────────────
