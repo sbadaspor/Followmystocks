@@ -328,6 +328,16 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let assetId, asset, holding, detail, isFollowed = false;
 let priceChart = null;
+let pageSym = '$'; // native currency symbol for this asset page
+
+// Derive native currency from ticker
+function tickerCurrency(ticker) {
+  if (!ticker) return 'USD';
+  if (ticker.endsWith('.DE') || ticker.endsWith('.PA') || ticker.endsWith('.AS') ||
+      ticker.endsWith('.LS') || ticker.endsWith('.MC') || ticker.endsWith('.MI')) return 'EUR';
+  if (ticker.endsWith('.L')) return 'GBP';
+  return 'USD';
+}
 
 // Chart.js defaults
 Chart.defaults.color          = '#55556a';
@@ -377,6 +387,8 @@ function renderPage() {
   const m = d.metrics   || {};
   const info = d.info   || {};
   const ann  = d.annual || [];
+  const sym  = currSym(tickerCurrency(asset.ticker));
+  pageSym = sym; // set module-level for section renderers
 
   document.getElementById('main').innerHTML = `
 
@@ -392,7 +404,7 @@ function renderPage() {
         ${info.fiscalYearEnd ? `<p class="hero-fiscal">Fecho do ano fiscal: ${info.fiscalYearEnd}</p>` : ''}
       </div>
       <div class="hero-right">
-        <div class="hero-price" id="hero-price">— €</div>
+        <div class="hero-price" id="hero-price">—</div>
         <div class="hero-change" id="hero-change">—</div>
         <div class="live-badge"><div class="live-dot"></div> EM TEMPO REAL</div>
       </div>
@@ -461,9 +473,9 @@ function renderPage() {
       </div>
       <div class="metrics-row row7">
         ${metricCell('P/E TTM',           fN(m.pe,2))}
-        ${metricCell('EPS TTM',           m.eps  != null ? fmt(m.eps,2)+' €'   : '—')}
+        ${metricCell('EPS TTM',           m.eps  != null ? fmt(m.eps,2)+' '+sym   : '—')}
         ${metricCell('NET DEBT / EBITDA', fN(m.netDebtEbitda,2))}
-        ${metricCell('MARKET CAP',        m.marketCap != null ? fmtBig(m.marketCap)+' €' : '—')}
+        ${metricCell('MARKET CAP',        m.marketCap != null ? fmtBig(m.marketCap)+' '+sym : '—')}
         ${metricCell('BETA',              fN(m.beta,2))}
         ${metricCell('DIVIDEND YIELD',    m.dividendYield != null ? (m.dividendYield>=0?'+':'')+(m.dividendYield*100).toFixed(2)+'%' : '—', m.dividendYield>0?'pos':'')}
         ${metricCell('ROIC',              m.roic  != null ? (m.roic*100).toFixed(2)+'%'  : '—')}
@@ -471,8 +483,8 @@ function renderPage() {
       <div style="height:1px;background:var(--border);margin:1px 0"></div>
       <div class="metrics-row row5">
         ${metricCell('CURRENT RATIO',         fN(m.currentRatio,2))}
-        ${metricCell('FREE CASH FLOW',        m.freeCashflow != null ? fmtBig(m.freeCashflow)+' €' : '—')}
-        ${metricCell('EBITDA',                m.ebitda != null ? fmtBig(m.ebitda)+' €' : '—')}
+        ${metricCell('FREE CASH FLOW',        m.freeCashflow != null ? fmtBig(m.freeCashflow)+' '+sym : '—')}
+        ${metricCell('EBITDA',                m.ebitda != null ? fmtBig(m.ebitda)+' '+sym : '—')}
         ${metricCell('DEBT / EQUITY',         m.debtToEquity != null ? (m.debtToEquity/100).toFixed(2) : '—')}
         ${metricCell('DAYS SALES (RECEBIM.)', m.daysSalesReceivables != null ? m.daysSalesReceivables.toFixed(1) : '—')}
       </div>
@@ -563,8 +575,8 @@ function renderPage() {
 function renderDadosGerais(ann) {
   if (!ann.length) return '<p style="color:var(--muted);font-size:13px">Dados não disponíveis.</p>';
   const l = ann[0], a3 = avg(ann,3), a4 = avg(ann,4);
-  const B = v => v != null ? fmtBig(v)+' €' : '—';
-  const E = v => v != null ? fmt(v,2)+' €'  : '—';
+  const B = v => v != null ? fmtBig(v)+' '+pageSym : '—';
+  const E = v => v != null ? fmt(v,2)+' '+pageSym  : '—';
   const rows = [
     ['EPS',             E(l.eps),         E(a4.eps),         E(a3.eps),         '—'],
     ['Receita total',   B(l.revenue),     B(a4.revenue),     B(a3.revenue),     '—'],
@@ -609,8 +621,8 @@ function renderAnual(ann) {
 
   const yrs = ann.map(a => a.year || '—');
 
-  const fmtB = v => v!=null ? fmtBig(v)+' €' : '—';
-  const fmtE = v => v!=null ? fmt(v,2)+' €' : '—';
+  const fmtB = v => v!=null ? fmtBig(v)+' '+pageSym : '—';
+  const fmtE = v => v!=null ? fmt(v,2)+' '+pageSym : '—';
   const fmtP = v => v!=null ? (v*100).toFixed(2)+'%' : '—';
   const fmtN = d => v => v!=null ? v.toFixed(d) : '—';
 
@@ -728,12 +740,12 @@ async function renderPriceChart(range) {
           tooltip: {
             backgroundColor: '#ffffff', borderColor: 'rgba(0,0,0,.12)', borderWidth: 1,
             bodyColor: '#e4e4f0', bodyFont: { family:"'JetBrains Mono'", size:12 },
-            callbacks: { label: c => ` ${c.parsed.y != null ? c.parsed.y.toFixed(2)+' €' : '—'}` }
+            callbacks: { label: c => ` ${c.parsed.y != null ? c.parsed.y.toFixed(2)+' '+pageSym : '—'}` }
           }
         },
         scales: {
           x: { grid:{display:false}, ticks:{maxTicksLimit:8,maxRotation:0,color:'#777790',font:{size:10}}, border:{display:false} },
-          y: { position:'right', grid:{color:'rgba(0,0,0,.07)'}, ticks:{color:'#777790',font:{size:10},callback:v=>v.toFixed(2)+' €'}, border:{display:false} }
+          y: { position:'right', grid:{color:'rgba(0,0,0,.07)'}, ticks:{color:'#777790',font:{size:10},callback:v=>v.toFixed(2)+' '+pageSym}, border:{display:false} }
         }
       }
     });
@@ -791,7 +803,7 @@ function renderEPSChart(ann) {
         borderColor:'#0fe07a', backgroundColor:'rgba(15,224,122,.08)',
         borderWidth:2, pointRadius:4, pointBackgroundColor:'#0fe07a', fill:true, tension:0.3 }]
     },
-    options: baseChartOpts({ suffix:' €', decimals:2 })
+    options: baseChartOpts({ suffix:' '+pageSym, decimals:2 })
   });
 }
 
@@ -835,7 +847,7 @@ function renderDivChart(divs) {
       datasets:[{ data:divs.map(d=>d.amount),
         backgroundColor:'rgba(15,224,122,.7)', borderColor:'#0fe07a', borderWidth:1, borderRadius:4 }]
     },
-    options: baseChartOpts({ suffix:' €', decimals:2, isBar:true })
+    options: baseChartOpts({ suffix:' '+pageSym, decimals:2, isBar:true })
   });
 }
 
@@ -847,17 +859,17 @@ async function fetchLivePrice() {
     const q    = data.quoteResponse?.result?.[0];
     if (!q) return;
 
-    const fx     = detail?.fxRate || 1;
-    const price  = q.regularMarketPrice * fx;
-    const change = q.regularMarketChange * fx;
+    const price  = q.regularMarketPrice;
+    const change = q.regularMarketChange;
     const chgPct = q.regularMarketChangePercent;
     const isPos  = chgPct >= 0;
+    const sym    = currSym(q.currency || 'USD');
 
     const el = document.getElementById('hero-price');
     const ec = document.getElementById('hero-change');
-    if (el) el.textContent = fmt(price,2) + ' €';
+    if (el) el.textContent = fmt(price,2) + ' ' + sym;
     if (ec) {
-      ec.textContent = `${isPos?'▲':'▼'} ${fmt(Math.abs(change),2)} € (${isPos?'+':''}${chgPct.toFixed(2)}%)`;
+      ec.textContent = `${isPos?'▲':'▼'} ${fmt(Math.abs(change),2)} ${sym} (${isPos?'+':''}${chgPct.toFixed(2)}%)`;
       ec.className = 'hero-change ' + (isPos ? 'pos' : 'neg');
     }
 
@@ -873,8 +885,8 @@ async function fetchLivePrice() {
       const vEl   = document.getElementById('pos-val');
       const plEl  = document.getElementById('pos-pl');
       const ppEl  = document.getElementById('pos-pl-pct');
-      if (vEl)  vEl.textContent  = fmt(val,0) + ' €';
-      if (plEl) { plEl.textContent = (plPos?'+':'') + fmt(pl,2)+' €'; plEl.className = 'pos-val '+(plPos?'pos':'neg'); }
+      if (vEl)  vEl.textContent  = fmt(val,0) + ' ' + sym;
+      if (plEl) { plEl.textContent = (plPos?'+':'') + fmt(pl,2)+' '+sym; plEl.className = 'pos-val '+(plPos?'pos':'neg'); }
       if (ppEl) { ppEl.textContent = (plPos?'+':'') + plPct.toFixed(2)+'%'; ppEl.className = 'pos-sub '+(plPos?'pos':'neg'); }
     }
   } catch {}
@@ -917,6 +929,15 @@ function metricCell(label, value, cls='') {
 function fmt(n, d=2) {
   if (n==null||isNaN(n)) return '—';
   return n.toLocaleString('pt-PT',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+function currSym(currency) {
+  if (!currency) return '$';
+  switch (currency.toUpperCase()) {
+    case 'EUR': return '€';
+    case 'GBP': return '£';
+    case 'USD': return '$';
+    default:    return currency + ' ';
+  }
 }
 function fN(n, d=2) {
   if (n==null||isNaN(n)) return '—';
