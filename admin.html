@@ -1893,7 +1893,8 @@ function renderEarningsPanel() {
       <td><span style="font-size:11px;color:var(--muted);font-style:italic">${e.note||''}</span></td>
       <td>${e.is_estimate
         ? `<span class="tag" style="color:var(--amber);border-color:rgba(196,126,0,.25)">Estimado</span>`
-        : `<span class="tag" style="color:var(--green);border-color:rgba(10,153,85,.25)">Confirmado</span>`}</td>
+        : `<span class="tag" style="color:var(--green);border-color:rgba(10,153,85,.25)">Confirmado</span>`}
+        ${e.is_annual ? `<span class="tag" style="color:var(--accent);border-color:rgba(83,68,232,.25);margin-left:4px">Anual</span>` : ''}</td>
       <td class="td-mono td-dim">${e.sort_order}</td>
       <td>
         <div class="td-actions">
@@ -1955,6 +1956,12 @@ function openEarnModal(idx) {
       </div>
       <div class="form-group">
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="earn-annual" ${e&&e.is_annual?'checked':''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent)">
+          Inclui Relatório Anual (4º trimestre + resultados anuais)
+        </label>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
           <input type="checkbox" id="earn-est" ${e&&e.is_estimate?'checked':''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent)">
           Data estimada (ainda não confirmada)
         </label>
@@ -1975,14 +1982,15 @@ function closeEarnModal() {
 async function saveEarn() {
   const id    = document.getElementById('earn-id').value;
   const label = document.getElementById('earn-label').value.trim();
-  const date  = document.getElementById('earn-date').value || null;
-  const note  = document.getElementById('earn-note').value.trim() || null;
-  const est   = document.getElementById('earn-est').checked;
-  const order = parseInt(document.getElementById('earn-order').value) || 0;
+  const date   = document.getElementById('earn-date').value || null;
+  const note   = document.getElementById('earn-note').value.trim() || null;
+  const est    = document.getElementById('earn-est').checked;
+  const annual = document.getElementById('earn-annual').checked;
+  const order  = parseInt(document.getElementById('earn-order').value) || 0;
 
   if (!label) { toast('Preenche a descrição do evento.','error'); return; }
 
-  const payload = { asset_id: earningsAssetId, label, event_date: date, note, is_estimate: est, sort_order: order };
+  const payload = { asset_id: earningsAssetId, label, event_date: date, note, is_estimate: est, is_annual: annual, sort_order: order };
 
   let err;
   if (id) {
