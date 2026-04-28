@@ -324,6 +324,10 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Dados Históricos
       </button>
+      <button class="nav-item" onclick="showTab('earnings',this)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Calendário Resultados
+      </button>
     </nav>
 
     <div class="content" id="tab-content">
@@ -483,6 +487,7 @@ function renderCurrentTab() {
   else if (currentTab==='assets') renderAssets();
   else if (currentTab==='holdings') renderHoldings();
   else if (currentTab==='historico') renderHistorico();
+  else if (currentTab==='earnings') renderEarnings();
 }
 function showTab(tab, btn) {
   currentTab=tab;
@@ -1824,6 +1829,180 @@ ${segHTML}
 
   if(btn){ btn.disabled=false; btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Exportar PDF'; }
   toast('Relat\xf3rio pronto! Escolhe "Guardar como PDF" na janela de impress\xe3o.','success');
+}
+
+/* ═══ EARNINGS CALENDAR ══════════════════════════════════════ */
+let earningsAssetId = null;
+let earningsData    = [];
+
+async function renderEarnings() {
+  const tc = document.getElementById('tab-content');
+  tc.innerHTML = `
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Calendário de Resultados</div>
+        <div class="page-sub">Datas de apresentação de resultados trimestrais e anuais por ativo</div>
+      </div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px">
+      <label style="font-size:12px;font-weight:600;color:var(--dim);display:block;margin-bottom:8px">Ativo</label>
+      <select id="earn-asset-sel" onchange="loadEarnings(this.value)"
+        style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 14px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--text);width:280px;outline:none;cursor:pointer">
+        <option value="">— Selecionar ativo —</option>
+        ${allAssets.map(a=>`<option value="${a.id}">${a.ticker} — ${a.name}</option>`).join('')}
+      </select>
+    </div>
+    <div id="earn-panel"></div>`;
+  if (earningsAssetId) {
+    document.getElementById('earn-asset-sel').value = earningsAssetId;
+    await loadEarnings(earningsAssetId);
+  }
+}
+
+async function loadEarnings(assetId) {
+  earningsAssetId = assetId;
+  const panel = document.getElementById('earn-panel');
+  if (!assetId) { panel.innerHTML=''; return; }
+  panel.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:12px 0">A carregar...</div>`;
+  const { data } = await sb.from('earnings_calendar').select('*').eq('asset_id', assetId).order('sort_order').order('event_date', { nullsFirst: false });
+  earningsData = data || [];
+  renderEarningsPanel();
+}
+
+function renderEarningsPanel() {
+  const panel = document.getElementById('earn-panel');
+  if (!earningsAssetId) return;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  let nextIdx = -1;
+  earningsData.forEach((e,i)=>{
+    if(!e.event_date) return;
+    const d = new Date(e.event_date+'T00:00:00');
+    if(d >= today && nextIdx === -1) nextIdx = i;
+  });
+
+  const rows = earningsData.map((e,i)=>{
+    const isPast = e.event_date && new Date(e.event_date+'T00:00:00') < today;
+    const isNext = i === nextIdx;
+    const dateStr = e.event_date
+      ? new Date(e.event_date+'T00:00:00').toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'})
+      : '—';
+    return `<tr>
+      <td style="font-weight:500">${e.label}</td>
+      <td class="td-mono" style="color:${isNext?'var(--accent)':isPast?'var(--muted)':'var(--text)'}">${dateStr}</td>
+      <td><span style="font-size:11px;color:var(--muted);font-style:italic">${e.note||''}</span></td>
+      <td>${e.is_estimate
+        ? `<span class="tag" style="color:var(--amber);border-color:rgba(196,126,0,.25)">Estimado</span>`
+        : `<span class="tag" style="color:var(--green);border-color:rgba(10,153,85,.25)">Confirmado</span>`}</td>
+      <td class="td-mono td-dim">${e.sort_order}</td>
+      <td>
+        <div class="td-actions">
+          <button class="btn btn-secondary btn-sm" onclick="openEarnModal(${i})">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEarn('${e.id}')">Apagar</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--muted)">${earningsData.length} evento(s) registado(s)</div>
+      <button class="btn btn-primary" onclick="openEarnModal(-1)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Adicionar Evento
+      </button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Evento</th><th>Data</th><th>Nota</th><th>Estado</th><th>Ordem</th><th style="text-align:right">Ações</th>
+        </tr></thead>
+        <tbody>${rows || `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px">Nenhum evento. Clica em "Adicionar Evento".</td></tr>`}</tbody>
+      </table>
+    </div>`;
+}
+
+function openEarnModal(idx) {
+  const e = idx >= 0 ? earningsData[idx] : null;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.display = 'flex';
+  overlay.id = 'earn-modal';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:480px">
+      <div class="modal-hdr">
+        <div class="modal-title">${e ? 'Editar Evento' : 'Adicionar Evento'}</div>
+        <button class="modal-close" onclick="closeEarnModal()">&#xD7;</button>
+      </div>
+      <input type="hidden" id="earn-id" value="${e?e.id:''}">
+      <div class="form-group">
+        <label>Descrição *</label>
+        <input type="text" id="earn-label" placeholder="ex: 2º Trimestre Fiscal 2026" value="${e?e.label.replace(/"/g,'&quot;'):''}">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" id="earn-date" value="${e&&e.event_date?e.event_date:''}">
+        </div>
+        <div class="form-group">
+          <label>Ordem de exibição</label>
+          <input type="number" id="earn-order" value="${e?e.sort_order:earningsData.length}" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Nota <span style="font-weight:400;color:var(--muted)">(ex: após fecho do mercado)</span></label>
+        <input type="text" id="earn-note" placeholder="ex: após fecho do mercado" value="${e&&e.note?e.note.replace(/"/g,'&quot;'):''}">
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="earn-est" ${e&&e.is_estimate?'checked':''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent)">
+          Data estimada (ainda não confirmada)
+        </label>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-secondary" onclick="closeEarnModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveEarn()">Guardar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function closeEarnModal() {
+  const m = document.getElementById('earn-modal');
+  if (m) m.remove();
+}
+
+async function saveEarn() {
+  const id    = document.getElementById('earn-id').value;
+  const label = document.getElementById('earn-label').value.trim();
+  const date  = document.getElementById('earn-date').value || null;
+  const note  = document.getElementById('earn-note').value.trim() || null;
+  const est   = document.getElementById('earn-est').checked;
+  const order = parseInt(document.getElementById('earn-order').value) || 0;
+
+  if (!label) { toast('Preenche a descrição do evento.','error'); return; }
+
+  const payload = { asset_id: earningsAssetId, label, event_date: date, note, is_estimate: est, sort_order: order };
+
+  let err;
+  if (id) {
+    ({ error: err } = await sb.from('earnings_calendar').update(payload).eq('id', id));
+  } else {
+    ({ error: err } = await sb.from('earnings_calendar').insert(payload));
+  }
+
+  if (err) { toast('Erro: ' + err.message, 'error'); return; }
+  toast(id ? 'Evento atualizado!' : 'Evento adicionado!', 'success');
+  closeEarnModal();
+  await loadEarnings(earningsAssetId);
+}
+
+async function deleteEarn(id) {
+  if (!confirm('Apagar este evento do calendário?')) return;
+  const { error } = await sb.from('earnings_calendar').delete().eq('id', id);
+  if (error) { toast('Erro: ' + error.message, 'error'); return; }
+  toast('Evento apagado.', 'success');
+  await loadEarnings(earningsAssetId);
 }
 
 </script>
