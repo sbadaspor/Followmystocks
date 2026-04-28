@@ -487,7 +487,8 @@ function renderEarningsBanner(earnings) {
       dateStr = d.toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' });
     }
 
-    const estBadge = e.is_estimate ? `<span class="earnings-est-badge">Estimado</span>` : '';
+    const estBadge    = e.is_estimate ? `<span class="earnings-est-badge">Estimado</span>` : '';
+    const annualBadge = e.is_annual   ? `<span class="earnings-est-badge" style="color:var(--accent);background:rgba(83,68,232,.08);border-color:rgba(83,68,232,.25)">Anual</span>` : '';
     const nextBadge = isNext ? `<span class="earnings-next-badge">Próximo</span>` : '';
     const pastBadge = isPast
       ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--muted);flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>`
@@ -498,6 +499,7 @@ function renderEarningsBanner(earnings) {
         <div class="earnings-dot ${dotClass}"></div>
         <div class="earnings-label">${e.label}</div>
         ${e.note ? `<span class="earnings-note">${e.note}</span>` : ''}
+        ${annualBadge}
         ${estBadge}
         ${nextBadge}
         <span class="earnings-date ${isNext ? 'next' : ''}">${dateStr}</span>
